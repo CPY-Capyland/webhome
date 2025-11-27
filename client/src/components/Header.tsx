@@ -38,10 +38,10 @@ export default function Header({
         </div>
         <div>
           <h1 className="font-serif font-bold text-lg leading-tight">
-            Civic Grid
+            Grille Civique
           </h1>
           <p className="text-xs text-muted-foreground">
-            Community Governance
+            Gouvernance Communautaire
           </p>
         </div>
       </div>

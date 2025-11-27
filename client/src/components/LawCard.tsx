@@ -29,6 +29,13 @@ interface LawCardProps {
   onVote: (lawId: string, vote: "up" | "down" | null) => void;
 }
 
+const statusLabels = {
+  active: "actif",
+  pending: "en attente",
+  passed: "adopté",
+  rejected: "rejeté",
+};
+
 export default function LawCard({ law, canVote, onVote }: LawCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentVote, setCurrentVote] = useState<"up" | "down" | null>(
@@ -77,12 +84,12 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
             {law.title}
           </CardTitle>
           <Badge className={`text-[10px] px-1.5 py-0 ${statusColors[law.status]}`}>
-            {law.status}
+            {statusLabels[law.status]}
           </Badge>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3 w-3" />
-          <span>{new Date(law.publishedAt).toLocaleDateString()}</span>
+          <span>{new Date(law.publishedAt).toLocaleDateString('fr-FR')}</span>
         </div>
       </CardHeader>
 
@@ -127,7 +134,7 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
                 data-testid={`button-expand-${law.id}`}
               >
                 <FileText className="h-3.5 w-3.5" />
-                <span>Read Full</span>
+                <span>Lire tout</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -137,14 +144,14 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
                     {law.title}
                   </DialogTitle>
                   <Badge className={`text-[10px] px-1.5 py-0 ${statusColors[law.status]}`}>
-                    {law.status}
+                    {statusLabels[law.status]}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   <span>
-                    Published{" "}
-                    {new Date(law.publishedAt).toLocaleDateString("en-US", {
+                    Publié le{" "}
+                    {new Date(law.publishedAt).toLocaleDateString("fr-FR", {
                       year: "numeric",
                       month: "long",
                       day: "numeric",
@@ -168,7 +175,7 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
                       data-testid={`button-modal-upvote-${law.id}`}
                     >
                       <ThumbsUp className="h-4 w-4" />
-                      <span>Support ({votes.up})</span>
+                      <span>Pour ({votes.up})</span>
                     </Button>
 
                     <Button
@@ -181,13 +188,13 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
                       data-testid={`button-modal-downvote-${law.id}`}
                     >
                       <ThumbsDown className="h-4 w-4" />
-                      <span>Oppose ({votes.down})</span>
+                      <span>Contre ({votes.down})</span>
                     </Button>
                   </div>
 
                   {!canVote && (
                     <p className="text-sm text-muted-foreground">
-                      Place a house to vote
+                      Placez une maison pour voter
                     </p>
                   )}
                 </div>
@@ -198,7 +205,7 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
 
         {!canVote && (
           <p className="text-xs text-muted-foreground text-center">
-            Place a house on the grid to vote
+            Placez une maison sur la grille pour voter
           </p>
         )}
       </CardContent>

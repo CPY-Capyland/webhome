@@ -44,13 +44,13 @@ export default function SuggestionForm({
       setText("");
       setIsOpen(false);
       toast({
-        title: "Suggestion Submitted",
-        description: "Your proposal has been sent to the government for review.",
+        title: "Proposition soumise",
+        description: "Votre proposition a été envoyée au gouvernement pour examen.",
       });
     } catch {
       toast({
-        title: "Submission Failed",
-        description: "Please try again later.",
+        title: "Échec de la soumission",
+        description: "Veuillez réessayer plus tard.",
         variant: "destructive",
       });
     } finally {
@@ -68,10 +68,10 @@ export default function SuggestionForm({
         >
           <div className="flex items-center gap-2">
             <Lightbulb className="h-4 w-4" />
-            <span>Suggest a Law</span>
+            <span>Proposer une loi</span>
           </div>
           <span className="text-muted-foreground text-xs">
-            {isOpen ? "Close" : "Expand"}
+            {isOpen ? "Fermer" : "Ouvrir"}
           </span>
         </Button>
       </CollapsibleTrigger>
@@ -79,31 +79,31 @@ export default function SuggestionForm({
       <CollapsibleContent className="mt-4 space-y-4">
         {!canSuggest ? (
           <p className="text-sm text-muted-foreground text-center py-4">
-            You need to place a house on the grid before you can submit
-            suggestions to the government.
+            Vous devez placer une maison sur la grille avant de pouvoir
+            soumettre des propositions au gouvernement.
           </p>
         ) : (
           <>
             <div className="space-y-2">
-              <Label htmlFor="suggestion-title">Title</Label>
+              <Label htmlFor="suggestion-title">Titre</Label>
               <Input
                 id="suggestion-title"
-                placeholder="Brief title for your proposal..."
+                placeholder="Titre bref de votre proposition..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={100}
                 data-testid="input-suggestion-title"
               />
               <p className="text-xs text-muted-foreground">
-                {title.length}/100 characters
+                {title.length}/100 caractères
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="suggestion-text">Proposal Details</Label>
+              <Label htmlFor="suggestion-text">Détails de la proposition</Label>
               <Textarea
                 id="suggestion-text"
-                placeholder="Describe your proposal in detail. What problem does it solve? How should it be implemented?"
+                placeholder="Décrivez votre proposition en détail. Quel problème résout-elle ? Comment devrait-elle être mise en œuvre ?"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 className="min-h-32 resize-none"
@@ -120,7 +120,7 @@ export default function SuggestionForm({
                         : "text-muted-foreground"
                   }
                 >
-                  {charCount}/{MAX_CHARS} characters
+                  {charCount}/{MAX_CHARS} caractères
                   {charCount < MIN_CHARS && ` (min ${MIN_CHARS})`}
                 </span>
               </div>
@@ -133,7 +133,7 @@ export default function SuggestionForm({
               data-testid="button-submit-suggestion"
             >
               <Send className="h-4 w-4" />
-              <span>{isSubmitting ? "Submitting..." : "Submit Proposal"}</span>
+              <span>{isSubmitting ? "Envoi en cours..." : "Soumettre la proposition"}</span>
             </Button>
           </>
         )}

@@ -257,7 +257,7 @@ export default function GridCanvas({
               <ZoomIn className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left">Zoom In</TooltipContent>
+          <TooltipContent side="left">Zoomer</TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -272,7 +272,7 @@ export default function GridCanvas({
               <ZoomOut className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left">Zoom Out</TooltipContent>
+          <TooltipContent side="left">Dézoomer</TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -286,7 +286,7 @@ export default function GridCanvas({
               <RotateCcw className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left">Reset View</TooltipContent>
+          <TooltipContent side="left">Réinitialiser la vue</TooltipContent>
         </Tooltip>
 
         {userHouse && (
@@ -301,14 +301,14 @@ export default function GridCanvas({
                 <Home className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">Go to My House</TooltipContent>
+            <TooltipContent side="left">Aller à ma maison</TooltipContent>
           </Tooltip>
         )}
       </div>
 
       <div className="absolute bottom-4 left-4 flex items-center gap-2 text-sm text-muted-foreground">
         <Move className="h-4 w-4" />
-        <span>Drag to pan</span>
+        <span>Glisser pour naviguer</span>
         <span className="mx-1">|</span>
         <span>Zoom: {Math.round(zoom * 100)}%</span>
       </div>

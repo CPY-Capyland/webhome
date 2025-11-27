@@ -68,11 +68,11 @@ export default function CooldownTimer({
         <TooltipTrigger asChild>
           <Badge variant="secondary" className="gap-1.5" data-testid="badge-no-house">
             <Home className="h-3 w-3" />
-            <span>No house placed</span>
+            <span>Aucune maison placée</span>
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
-          Click on an empty cell in the grid to place your house
+          Cliquez sur une cellule vide dans la grille pour placer votre maison
         </TooltipContent>
       </Tooltip>
     );
@@ -89,7 +89,7 @@ export default function CooldownTimer({
             </span>
           </Badge>
         </TooltipTrigger>
-        <TooltipContent>You can move your house to a new location</TooltipContent>
+        <TooltipContent>Vous pouvez déplacer votre maison vers un nouvel emplacement</TooltipContent>
       </Tooltip>
     );
   }
@@ -104,9 +104,9 @@ export default function CooldownTimer({
       </TooltipTrigger>
       <TooltipContent>
         <div className="text-center">
-          <p>House at ({houseLocation.x}, {houseLocation.y})</p>
+          <p>Maison à ({houseLocation.x}, {houseLocation.y})</p>
           <p className="text-xs text-muted-foreground">
-            You can move again in {timeRemaining}
+            Vous pourrez déménager dans {timeRemaining}
           </p>
         </div>
       </TooltipContent>

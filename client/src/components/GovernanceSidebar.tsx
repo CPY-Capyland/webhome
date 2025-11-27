@@ -26,15 +26,15 @@ export default function GovernanceSidebar({
   return (
     <div className="w-80 border-l border-border bg-sidebar flex flex-col h-full">
       <div className="p-4 border-b border-sidebar-border">
-        <h2 className="text-lg font-serif font-semibold">Governance</h2>
+        <h2 className="text-lg font-serif font-semibold">Gouvernance</h2>
         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <FileText className="h-4 w-4" />
-            <span>{activeLaws} active laws</span>
+            <span>{activeLaws} lois actives</span>
           </div>
           <div className="flex items-center gap-1">
             <Users className="h-4 w-4" />
-            <span>{totalHouses} residents</span>
+            <span>{totalHouses} résidents</span>
           </div>
         </div>
       </div>
@@ -43,7 +43,7 @@ export default function GovernanceSidebar({
         <div className="p-4 space-y-4">
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              Published Laws
+              Lois publiées
             </h3>
             <div className="space-y-4">
               {laws.length > 0 ? (
@@ -57,7 +57,7 @@ export default function GovernanceSidebar({
                 ))
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  No laws have been published yet.
+                  Aucune loi n'a encore été publiée.
                 </p>
               )}
             </div>
@@ -67,7 +67,7 @@ export default function GovernanceSidebar({
 
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              Make Your Voice Heard
+              Faites entendre votre voix
             </h3>
             <SuggestionForm
               canSuggest={canSuggest}

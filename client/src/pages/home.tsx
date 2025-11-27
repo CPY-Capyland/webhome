@@ -11,23 +11,23 @@ import { useToast } from "@/hooks/use-toast";
 const INITIAL_LAWS: Law[] = [
   {
     id: "law-1",
-    title: "Community Garden Initiative",
+    title: "Initiative des Jardins Communautaires",
     description:
-      "Establish community gardens in empty lots for sustainable food production and community bonding.",
-    fullText: `Section 1: Purpose
-This law establishes a framework for creating and maintaining community gardens within designated areas of the grid.
+      "Établir des jardins communautaires dans les terrains vides pour une production alimentaire durable et le renforcement des liens communautaires.",
+    fullText: `Article 1 : Objectif
+Cette loi établit un cadre pour la création et l'entretien de jardins communautaires dans les zones désignées de la grille.
 
-Section 2: Eligibility
-Any resident with a placed house may apply for a garden plot adjacent to their location.
+Article 2 : Éligibilité
+Tout résident ayant une maison placée peut demander une parcelle de jardin adjacente à son emplacement.
 
-Section 3: Responsibilities
-Garden plot holders must:
-- Maintain their plot in good condition
-- Follow organic growing practices
-- Share excess produce with neighbors
+Article 3 : Responsabilités
+Les détenteurs de parcelles de jardin doivent :
+- Maintenir leur parcelle en bon état
+- Suivre des pratiques de culture biologique
+- Partager les excédents de production avec les voisins
 
-Section 4: Governance
-A garden committee of 5 elected residents will oversee operations and resolve disputes.`,
+Article 4 : Gouvernance
+Un comité de jardinage composé de 5 résidents élus supervisera les opérations et résoudra les différends.`,
     publishedAt: "2024-11-25",
     status: "active",
     upvotes: 234,
@@ -36,20 +36,20 @@ A garden committee of 5 elected residents will oversee operations and resolve di
   },
   {
     id: "law-2",
-    title: "Quiet Hours Policy",
+    title: "Politique des Heures de Silence",
     description:
-      "Implement quiet hours from 10 PM to 7 AM in residential areas to ensure peaceful living.",
-    fullText: `Section 1: Quiet Hours
-All residents must observe quiet hours between 10:00 PM and 7:00 AM daily.
+      "Mettre en place des heures de silence de 22h à 7h dans les zones résidentielles pour garantir un cadre de vie paisible.",
+    fullText: `Article 1 : Heures de Silence
+Tous les résidents doivent observer les heures de silence entre 22h00 et 7h00 chaque jour.
 
-Section 2: Restrictions
-During quiet hours, the following are prohibited:
-- Loud music or entertainment
-- Construction work
-- Outdoor gatherings exceeding 5 people
+Article 2 : Restrictions
+Pendant les heures de silence, les activités suivantes sont interdites :
+- Musique forte ou divertissements bruyants
+- Travaux de construction
+- Rassemblements extérieurs de plus de 5 personnes
 
-Section 3: Enforcement
-Violations may result in warnings and community service requirements.`,
+Article 3 : Application
+Les infractions peuvent entraîner des avertissements et des obligations de service communautaire.`,
     publishedAt: "2024-11-20",
     status: "passed",
     upvotes: 456,
@@ -58,17 +58,17 @@ Violations may result in warnings and community service requirements.`,
   },
   {
     id: "law-3",
-    title: "Public Transit Expansion",
+    title: "Extension des Transports en Commun",
     description:
-      "Expand bus routes to cover underserved areas of the grid for better mobility.",
-    fullText: `Section 1: Expansion Plan
-The public transit authority shall extend service to grid sectors 100-200 and 400-500.
+      "Étendre les lignes de bus pour couvrir les zones mal desservies de la grille pour une meilleure mobilité.",
+    fullText: `Article 1 : Plan d'Extension
+L'autorité des transports publics doit étendre le service aux secteurs 100-200 et 400-500 de la grille.
 
-Section 2: Timeline
-Implementation to begin within 60 days of passage and complete within 180 days.
+Article 2 : Calendrier
+La mise en œuvre doit commencer dans les 60 jours suivant l'adoption et être achevée dans les 180 jours.
 
-Section 3: Funding
-Funded through a 0.5% property assessment on all placed houses.`,
+Article 3 : Financement
+Financé par une taxe de 0,5% sur toutes les maisons placées.`,
     publishedAt: "2024-11-18",
     status: "pending",
     upvotes: 123,
@@ -77,17 +77,17 @@ Funded through a 0.5% property assessment on all placed houses.`,
   },
   {
     id: "law-4",
-    title: "Renewable Energy Mandate",
+    title: "Obligation d'Énergie Renouvelable",
     description:
-      "Require all new constructions to include solar panels or other renewable energy sources.",
-    fullText: `Section 1: Requirements
-All new houses placed after passage must include renewable energy systems.
+      "Exiger que toutes les nouvelles constructions incluent des panneaux solaires ou d'autres sources d'énergie renouvelable.",
+    fullText: `Article 1 : Exigences
+Toutes les nouvelles maisons placées après l'adoption doivent inclure des systèmes d'énergie renouvelable.
 
-Section 2: Incentives
-Existing houses that retrofit will receive property tax credits.
+Article 2 : Incitations
+Les maisons existantes qui se modernisent recevront des crédits d'impôt foncier.
 
-Section 3: Compliance
-Houses must generate at least 30% of their energy needs from renewable sources.`,
+Article 3 : Conformité
+Les maisons doivent générer au moins 30% de leurs besoins énergétiques à partir de sources renouvelables.`,
     publishedAt: "2024-11-15",
     status: "active",
     upvotes: 567,
@@ -140,8 +140,8 @@ export default function Home() {
     (x: number, y: number) => {
       if (!canPlace) {
         toast({
-          title: "Cooldown Active",
-          description: "You must wait before moving your house again.",
+          title: "Délai actif",
+          description: "Vous devez attendre avant de pouvoir déplacer votre maison à nouveau.",
           variant: "destructive",
         });
         return;
@@ -150,8 +150,8 @@ export default function Home() {
       const isOccupied = allHouses.some((h) => h.x === x && h.y === y);
       if (isOccupied) {
         toast({
-          title: "Space Occupied",
-          description: "This location already has a house.",
+          title: "Espace occupé",
+          description: "Cet emplacement a déjà une maison.",
           variant: "destructive",
         });
         return;
@@ -190,7 +190,7 @@ export default function Home() {
 
   const handleSuggestionSubmit = useCallback(
     (title: string, text: string) => {
-      console.log("Suggestion submitted:", { title, text });
+      console.log("Proposition soumise:", { title, text });
       // todo: replace with API call
     },
     []

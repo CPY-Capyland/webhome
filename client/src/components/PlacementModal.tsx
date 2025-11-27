@@ -51,10 +51,10 @@ export default function PlacementModal({
               <Home className="h-8 w-8 text-status-online" />
             </div>
             <p className="text-lg font-semibold text-center">
-              House {isMove ? "Moved" : "Placed"} Successfully!
+              Maison {isMove ? "déplacée" : "placée"} avec succès !
             </p>
             <p className="text-sm text-muted-foreground">
-              Location: ({coordinates.x}, {coordinates.y})
+              Emplacement : ({coordinates.x}, {coordinates.y})
             </p>
           </div>
         ) : (
@@ -62,12 +62,12 @@ export default function PlacementModal({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                {isMove ? "Move Your House" : "Place Your House"}
+                {isMove ? "Déplacer votre maison" : "Placer votre maison"}
               </DialogTitle>
               <DialogDescription>
                 {isMove
-                  ? "You are about to move your house to a new location."
-                  : "You are about to place your house on the grid."}
+                  ? "Vous êtes sur le point de déplacer votre maison vers un nouvel emplacement."
+                  : "Vous êtes sur le point de placer votre maison sur la grille."}
               </DialogDescription>
             </DialogHeader>
 
@@ -80,7 +80,7 @@ export default function PlacementModal({
                   <p className="text-2xl font-mono font-semibold">
                     ({coordinates.x}, {coordinates.y})
                   </p>
-                  <p className="text-sm text-muted-foreground">Grid Coordinates</p>
+                  <p className="text-sm text-muted-foreground">Coordonnées de la grille</p>
                 </div>
               </div>
 
@@ -89,9 +89,9 @@ export default function PlacementModal({
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-chart-4 mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-medium text-chart-4">24-Hour Cooldown</p>
+                      <p className="font-medium text-chart-4">Délai de 24 heures</p>
                       <p className="text-muted-foreground">
-                        After moving, you must wait 24 hours before moving again.
+                        Après le déménagement, vous devez attendre 24 heures avant de pouvoir déménager à nouveau.
                       </p>
                     </div>
                   </div>
@@ -105,7 +105,7 @@ export default function PlacementModal({
                 onClick={onClose}
                 data-testid="button-cancel-placement"
               >
-                Cancel
+                Annuler
               </Button>
               <Button
                 onClick={handleConfirm}
@@ -113,10 +113,10 @@ export default function PlacementModal({
                 data-testid="button-confirm-placement"
               >
                 {isPlacing
-                  ? "Placing..."
+                  ? "Placement..."
                   : isMove
-                    ? "Move House"
-                    : "Place House"}
+                    ? "Déplacer la maison"
+                    : "Placer la maison"}
               </Button>
             </DialogFooter>
           </>
