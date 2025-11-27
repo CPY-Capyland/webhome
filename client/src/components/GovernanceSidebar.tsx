@@ -1,0 +1,81 @@
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { FileText, Users } from "lucide-react";
+import LawCard, { type Law } from "./LawCard";
+import SuggestionForm from "./SuggestionForm";
+
+interface GovernanceSidebarProps {
+  laws: Law[];
+  canVote: boolean;
+  canSuggest: boolean;
+  totalHouses: number;
+  onVote: (lawId: string, vote: "up" | "down" | null) => void;
+  onSuggestionSubmit: (title: string, text: string) => void;
+}
+
+export default function GovernanceSidebar({
+  laws,
+  canVote,
+  canSuggest,
+  totalHouses,
+  onVote,
+  onSuggestionSubmit,
+}: GovernanceSidebarProps) {
+  const activeLaws = laws.filter((l) => l.status === "active").length;
+
+  return (
+    <div className="w-80 border-l border-border bg-sidebar flex flex-col h-full">
+      <div className="p-4 border-b border-sidebar-border">
+        <h2 className="text-lg font-serif font-semibold">Governance</h2>
+        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <FileText className="h-4 w-4" />
+            <span>{activeLaws} active laws</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Users className="h-4 w-4" />
+            <span>{totalHouses} residents</span>
+          </div>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-4">
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">
+              Published Laws
+            </h3>
+            <div className="space-y-4">
+              {laws.length > 0 ? (
+                laws.map((law) => (
+                  <LawCard
+                    key={law.id}
+                    law={law}
+                    canVote={canVote}
+                    onVote={onVote}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No laws have been published yet.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">
+              Make Your Voice Heard
+            </h3>
+            <SuggestionForm
+              canSuggest={canSuggest}
+              onSubmit={onSuggestionSubmit}
+            />
+          </div>
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
