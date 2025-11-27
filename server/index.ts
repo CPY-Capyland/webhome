@@ -1,16 +1,41 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import MemoryStore from "memorystore";
 
 const app = express();
 const httpServer = createServer(app);
+const MemoryStoreSession = MemoryStore(session);
 
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
   }
 }
+
+declare module "express-session" {
+  interface SessionData {
+    userId: string;
+  }
+}
+
+// Session middleware
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "civic-grid-session-secret",
+    resave: false,
+    saveUninitialized: true,
+    store: new MemoryStoreSession({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    }),
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    },
+  })
+);
 
 app.use(
   express.json({
