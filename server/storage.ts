@@ -29,6 +29,7 @@ export interface IStorage {
   getAllLaws(): Promise<Law[]>;
   getLawsWithVotes(userId?: string): Promise<LawWithVotes[]>;
   createLaw(law: InsertLaw): Promise<Law>;
+  closeLawVoting(id: string): Promise<void>;
   
   // Votes
   getVote(lawId: string, userId: string): Promise<Vote | undefined>;
@@ -122,6 +123,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLawsWithVotes(userId?: string): Promise<LawWithVotes[]> {
+    const VOTING_DURATION_MS = 72 * 60 * 60 * 1000;
     const allLaws = await db.select().from(laws);
     const allVotes = await db.select().from(votes);
     
@@ -133,11 +135,27 @@ export class DatabaseStorage implements IStorage {
         ? lawVotes.find(v => v.userId === userId)?.vote || null 
         : null;
       
+      // Calculate votable status
+      let isVotable = law.status === "active";
+      let votingEndsAt: Date | undefined;
+      
+      if (isVotable) {
+        if (law.votingClosedAt) {
+          isVotable = law.isInTiebreak;
+        } else {
+          votingEndsAt = new Date(law.publishedAt.getTime() + VOTING_DURATION_MS);
+          isVotable = new Date() < votingEndsAt;
+        }
+      }
+      
       return {
         ...law,
         upvotes,
         downvotes,
         userVote,
+        isVotable,
+        votingEndsAt,
+        isInTiebreak: law.isInTiebreak,
       };
     });
   }
@@ -145,6 +163,12 @@ export class DatabaseStorage implements IStorage {
   async createLaw(law: InsertLaw): Promise<Law> {
     const [newLaw] = await db.insert(laws).values(law).returning();
     return newLaw;
+  }
+
+  async closeLawVoting(id: string): Promise<void> {
+    await db.update(laws)
+      .set({ votingClosedAt: new Date(), isInTiebreak: false })
+      .where(eq(laws.id, id));
   }
 
   // Votes

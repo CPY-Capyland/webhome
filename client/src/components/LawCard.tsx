@@ -21,11 +21,15 @@ export interface Law {
   upvotes: number;
   downvotes: number;
   userVote?: "up" | "down" | null;
+  isVotable?: boolean;
+  votingEndsAt?: string;
+  isInTiebreak?: boolean;
 }
 
 interface LawCardProps {
   law: Law;
   canVote: boolean;
+  canUserVote?: boolean;
   onVote: (lawId: string, vote: "up" | "down" | null) => void;
 }
 
@@ -36,7 +40,7 @@ const statusLabels = {
   rejected: "rejeté",
 };
 
-export default function LawCard({ law, canVote, onVote }: LawCardProps) {
+export default function LawCard({ law, canVote, canUserVote = true, onVote }: LawCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentVote, setCurrentVote] = useState<"up" | "down" | null>(
     law.userVote || null
@@ -46,8 +50,10 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
     down: law.downvotes,
   });
 
+  const isVotable = canVote && canUserVote && (law.isVotable !== false);
+
   const handleVote = (vote: "up" | "down") => {
-    if (!canVote) return;
+    if (!isVotable) return;
 
     let newVote: "up" | "down" | null;
     const newVotes = { ...votes };
@@ -83,13 +89,25 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
           <CardTitle className="text-base font-semibold leading-tight flex-1">
             {law.title}
           </CardTitle>
-          <Badge className={`text-[10px] px-1.5 py-0 ${statusColors[law.status]}`}>
-            {statusLabels[law.status]}
-          </Badge>
+          <div className="flex gap-1 flex-wrap justify-end">
+            <Badge className={`text-[10px] px-1.5 py-0 ${statusColors[law.status]}`}>
+              {statusLabels[law.status]}
+            </Badge>
+            {!isVotable && law.status === "active" && (
+              <Badge className="text-[10px] px-1.5 py-0 bg-muted text-muted-foreground">
+                {law.isInTiebreak ? "Égalité" : "Vote fermé"}
+              </Badge>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3 w-3" />
           <span>{new Date(law.publishedAt).toLocaleDateString('fr-FR')}</span>
+          {law.votingEndsAt && isVotable && (
+            <span className="ml-2">
+              • Vote jusqu'au {new Date(law.votingEndsAt).toLocaleDateString('fr-FR')}
+            </span>
+          )}
         </div>
       </CardHeader>
 
@@ -104,7 +122,7 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
               size="sm"
               variant={currentVote === "up" ? "default" : "secondary"}
               onClick={() => handleVote("up")}
-              disabled={!canVote}
+              disabled={!isVotable}
               className="gap-1"
               data-testid={`button-upvote-${law.id}`}
             >
@@ -116,7 +134,7 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
               size="sm"
               variant={currentVote === "down" ? "destructive" : "secondary"}
               onClick={() => handleVote("down")}
-              disabled={!canVote}
+              disabled={!isVotable}
               className="gap-1"
               data-testid={`button-downvote-${law.id}`}
             >
@@ -170,7 +188,7 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
                     <Button
                       variant={currentVote === "up" ? "default" : "secondary"}
                       onClick={() => handleVote("up")}
-                      disabled={!canVote}
+                      disabled={!isVotable}
                       className="gap-2"
                       data-testid={`button-modal-upvote-${law.id}`}
                     >
@@ -183,7 +201,7 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
                         currentVote === "down" ? "destructive" : "secondary"
                       }
                       onClick={() => handleVote("down")}
-                      disabled={!canVote}
+                      disabled={!isVotable}
                       className="gap-2"
                       data-testid={`button-modal-downvote-${law.id}`}
                     >
@@ -192,9 +210,9 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
                     </Button>
                   </div>
 
-                  {!canVote && (
+                  {!isVotable && (
                     <p className="text-sm text-muted-foreground">
-                      Placez une maison pour voter
+                      {!canVote ? "Placez une maison pour voter" : "Vote fermé"}
                     </p>
                   )}
                 </div>
@@ -203,9 +221,9 @@ export default function LawCard({ law, canVote, onVote }: LawCardProps) {
           </Dialog>
         </div>
 
-        {!canVote && (
+        {!isVotable && (
           <p className="text-xs text-muted-foreground text-center">
-            Placez une maison sur la grille pour voter
+            {!canVote ? "Placez une maison sur la grille pour voter" : "Le vote n'est plus disponible"}
           </p>
         )}
       </CardContent>

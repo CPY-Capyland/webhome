@@ -5,6 +5,22 @@ import { randomUUID } from "crypto";
 
 const COOLDOWN_HOURS = 24;
 const GRID_SIZE = 500;
+const VOTING_DURATION_HOURS = 72;
+
+function isVotable(law: any): boolean {
+  // Must be active status
+  if (law.status !== "active") return false;
+  
+  // If voting already closed, check if in tiebreak
+  if (law.votingClosedAt) {
+    return law.isInTiebreak;
+  }
+  
+  // Check if within 72 hours
+  const now = new Date();
+  const votingDeadline = new Date(law.publishedAt.getTime() + VOTING_DURATION_HOURS * 60 * 60 * 1000);
+  return now < votingDeadline;
+}
 
 async function getOrCreateUser(req: Request): Promise<string> {
   let sessionId = req.session?.userId;
@@ -149,12 +165,27 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Loi non trouvée" });
       }
       
+      // Check if voting is allowed
+      if (!isVotable(law)) {
+        return res.status(400).json({ error: "Le vote n'est plus possible pour cette loi" });
+      }
+      
       if (vote === null) {
         // Remove vote
         await storage.deleteVote(id, userId);
       } else if (vote === "up" || vote === "down") {
         // Create or update vote
         await storage.createOrUpdateVote(id, userId, vote);
+        
+        // Check if this vote closes a tiebreak
+        if (law.isInTiebreak) {
+          const laws = await storage.getLawsWithVotes(userId);
+          const updatedLaw = laws.find(l => l.id === id);
+          if (updatedLaw && updatedLaw.upvotes !== updatedLaw.downvotes) {
+            // Close voting
+            await storage.closeLawVoting(id);
+          }
+        }
       } else {
         return res.status(400).json({ error: "Vote invalide" });
       }

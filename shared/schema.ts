@@ -30,6 +30,8 @@ export const laws = pgTable("laws", {
   fullText: text("full_text").notNull(),
   status: text("status", { enum: ["active", "pending", "passed", "rejected"] }).notNull().default("active"),
   publishedAt: timestamp("published_at").defaultNow().notNull(),
+  votingClosedAt: timestamp("voting_closed_at"),
+  isInTiebreak: boolean("is_in_tiebreak").default(false).notNull(),
 });
 
 // Votes table - user votes on laws
@@ -119,4 +121,7 @@ export type LawWithVotes = Law & {
   upvotes: number; 
   downvotes: number; 
   userVote?: "up" | "down" | null;
+  isVotable?: boolean;
+  votingEndsAt?: Date;
+  isInTiebreak?: boolean;
 };
