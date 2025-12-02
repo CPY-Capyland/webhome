@@ -3,11 +3,12 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import MemoryStore from "memorystore";
+import { pool } from "./db";
+import connectPgSimple from "connect-pg-simple";
 
 const app = express();
 const httpServer = createServer(app);
-const MemoryStoreSession = MemoryStore(session);
+const PGStore = connectPgSimple(session);
 
 declare module "http" {
   interface IncomingMessage {
@@ -27,8 +28,9 @@ app.use(
     secret: process.env.SESSION_SECRET || "civic-grid-session-secret",
     resave: false,
     saveUninitialized: true,
-    store: new MemoryStoreSession({
-      checkPeriod: 86400000, // prune expired entries every 24h
+    store: new PGStore({
+      pool,
+      tableName: "user_sessions",
     }),
     cookie: {
       secure: process.env.NODE_ENV === "production",
