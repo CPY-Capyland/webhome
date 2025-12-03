@@ -8,7 +8,7 @@ import PlacementModal from "@/components/PlacementModal";
 import { type Law } from "@/components/LawCard";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { House, LawWithVotes } from "@shared/schema";
+import type { House, LawWithVotes, User } from "@shared/schema";
 
 interface HouseWithUser extends House {
   isCurrentUser?: boolean;
@@ -28,6 +28,11 @@ export default function Home() {
   const { toast } = useToast();
   const [placementCoords, setPlacementCoords] = useState<{ x: number; y: number } | null>(null);
   const [isPlacementModalOpen, setIsPlacementModalOpen] = useState(false);
+
+  // Fetch current user
+  const { data: user } = useQuery<User | null>({
+    queryKey: ["/api/me"],
+  });
 
   // Fetch user status
   const { data: userStatus } = useQuery<UserStatus>({
@@ -117,13 +122,22 @@ export default function Home() {
   const userHouse = userStatus?.house ? {
     x: userStatus.house.x,
     y: userStatus.house.y,
-    userId: "current-user",
+    userId: user?.id || "current-user",
     isCurrentUser: true,
   } : null;
   const lastMoveTime = userStatus?.house?.lastMovedAt ? new Date(userStatus.house.lastMovedAt) : null;
 
   const handleCellClick = useCallback(
     (x: number, y: number) => {
+      if (!user) {
+        toast({
+          title: "Connexion requise",
+          description: "Vous devez vous connecter avec Discord pour placer une maison.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (!canPlace) {
         toast({
           title: "Délai actif",
@@ -146,7 +160,7 @@ export default function Home() {
       setPlacementCoords({ x, y });
       setIsPlacementModalOpen(true);
     },
-    [canPlace, houses, toast]
+    [user, canPlace, houses, toast]
   );
 
   const handleConfirmPlacement = useCallback(() => {
@@ -156,16 +170,32 @@ export default function Home() {
 
   const handleVote = useCallback(
     (lawId: string, vote: "up" | "down" | null) => {
+      if (!user) {
+        toast({
+          title: "Connexion requise",
+          description: "Vous devez vous connecter pour voter.",
+          variant: "destructive",
+        });
+        return;
+      }
       voteMutation.mutate({ lawId, vote });
     },
-    [voteMutation]
+    [user, voteMutation, toast]
   );
 
   const handleSuggestionSubmit = useCallback(
     (title: string, text: string) => {
+      if (!user) {
+        toast({
+          title: "Connexion requise",
+          description: "Vous devez vous connecter pour faire une proposition.",
+          variant: "destructive",
+        });
+        return;
+      }
       suggestionMutation.mutate({ title, text });
     },
-    [suggestionMutation]
+    [user, suggestionMutation, toast]
   );
 
   // Transform laws for UI component
@@ -185,6 +215,7 @@ export default function Home() {
     <TooltipProvider>
       <div className="h-screen flex flex-col bg-background">
         <Header
+          user={user}
           houseLocation={userHouse ? { x: userHouse.x, y: userHouse.y } : null}
           lastMoveTime={lastMoveTime}
           totalHouses={houses.length}

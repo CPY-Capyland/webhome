@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { randomUUID } from "crypto";
@@ -22,28 +22,17 @@ function isVotable(law: any): boolean {
   return now < votingDeadline;
 }
 
-async function getOrCreateUser(req: Request): Promise<string> {
-  let sessionId = req.session?.userId;
-  
-  if (!sessionId) {
-    sessionId = randomUUID();
-    if (req.session) {
-      req.session.userId = sessionId;
-    }
-  }
-  
-  let user = await storage.getUserBySessionId(sessionId);
-  if (!user) {
-    user = await storage.createUser(sessionId);
-  }
-  
-  return user.id;
-}
-
 function canMoveHouse(lastMovedAt: Date): boolean {
   const now = new Date();
   const cooldownEnd = new Date(lastMovedAt.getTime() + COOLDOWN_HOURS * 60 * 60 * 1000);
   return now >= cooldownEnd;
+}
+
+function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ error: "Unauthorized" });
 }
 
 export async function registerRoutes(
@@ -54,7 +43,7 @@ export async function registerRoutes(
   // Get all houses
   app.get("/api/houses", async (req: Request, res: Response) => {
     try {
-      const userId = await getOrCreateUser(req);
+      const userId = req.user?.id;
       const allHouses = await storage.getAllHouses();
       
       const housesWithUser = allHouses.map(house => ({
@@ -70,9 +59,9 @@ export async function registerRoutes(
   });
 
   // Get current user's house
-  app.get("/api/houses/mine", async (req: Request, res: Response) => {
+  app.get("/api/houses/mine", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = await getOrCreateUser(req);
+      const userId = req.user.id;
       const house = await storage.getHouse(userId);
       
       if (!house) {
@@ -91,9 +80,9 @@ export async function registerRoutes(
   });
 
   // Place or move house
-  app.post("/api/houses", async (req: Request, res: Response) => {
+  app.post("/api/houses", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = await getOrCreateUser(req);
+      const userId = req.user.id;
       const { x, y } = req.body;
       
       // Validate coordinates
@@ -137,7 +126,7 @@ export async function registerRoutes(
   // Get all laws with vote counts
   app.get("/api/laws", async (req: Request, res: Response) => {
     try {
-      const userId = await getOrCreateUser(req);
+      const userId = req.user?.id;
       const laws = await storage.getLawsWithVotes(userId);
       res.json(laws);
     } catch (error) {
@@ -147,9 +136,9 @@ export async function registerRoutes(
   });
 
   // Vote on a law
-  app.post("/api/laws/:id/vote", async (req: Request, res: Response) => {
+  app.post("/api/laws/:id/vote", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = await getOrCreateUser(req);
+      const userId = req.user.id;
       const { id } = req.params;
       const { vote } = req.body;
       
@@ -201,9 +190,9 @@ export async function registerRoutes(
   });
 
   // Submit a suggestion
-  app.post("/api/suggestions", async (req: Request, res: Response) => {
+  app.post("/api/suggestions", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = await getOrCreateUser(req);
+      const userId = req.user.id;
       const { title, text } = req.body;
       
       // Check if user has a house
@@ -236,7 +225,7 @@ export async function registerRoutes(
   // Get user status (for header display)
   app.get("/api/user/status", async (req: Request, res: Response) => {
     try {
-      const userId = await getOrCreateUser(req);
+      const userId = req.user?.id;
       const house = await storage.getHouse(userId);
       
       res.json({

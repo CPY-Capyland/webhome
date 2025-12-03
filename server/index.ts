@@ -39,6 +39,34 @@ app.use(
   })
 );
 
+import "./passport";
+import passport from "passport";
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Auth routes
+app.get("/auth/discord", passport.authenticate("discord"));
+app.get(
+  "/auth/discord/callback",
+  passport.authenticate("discord", {
+    failureRedirect: "/",
+    successRedirect: "/",
+  })
+);
+app.get("/auth/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).json({ message: "Logout failed" });
+    }
+    res.redirect("/");
+  });
+});
+
+app.get("/api/me", (req, res) => {
+  res.json(req.user || null);
+});
+
 app.use(
   express.json({
     verify: (req, _res, buf) => {

@@ -14,8 +14,8 @@ import { randomUUID } from "crypto";
 export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
-  getUserBySessionId(sessionId: string): Promise<User | undefined>;
-  createUser(sessionId: string): Promise<User>;
+  getUserByDiscordId(discordId: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   
   // Houses
   getHouse(userId: string): Promise<House | undefined>;
@@ -48,15 +48,14 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async getUserBySessionId(sessionId: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.sessionId, sessionId));
+  async getUserByDiscordId(discordId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.discordId, discordId));
     return user || undefined;
   }
 
-  async createUser(sessionId: string): Promise<User> {
-    const id = randomUUID();
-    const [user] = await db.insert(users).values({ id, sessionId }).returning();
-    return user;
+  async createUser(user: InsertUser): Promise<User> {
+    const [createdUser] = await db.insert(users).values(user).returning();
+    return createdUser;
   }
 
   // Houses
