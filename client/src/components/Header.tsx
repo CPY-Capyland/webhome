@@ -47,12 +47,8 @@ export default function Header({
           <Grid3X3 className="h-6 w-6 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="font-serif font-bold text-lg leading-tight">
-            Grille Civique
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Gouvernance Communautaire
-          </p>
+      <h1 className="text-xl font-bold">Capyland</h1>
+      <p className="text-sm text-gray-500">Carte habitable et espace politique</p>
         </div>
       </div>
 
