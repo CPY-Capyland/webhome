@@ -8,6 +8,13 @@
       "when": 1764721795828,
       "tag": "0000_mighty_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1764770476873,
+      "tag": "0001_rich_ikaris",
+      "breakpoints": true
     }
   ]
 }

@@ -6,7 +6,7 @@ import { z } from "zod";
 // Users table - simple session-based identification
 export const users = pgTable("users", {
   id: varchar("id", { length: 36 }).primaryKey(),
-  discordId: text("discord_id").notNull().unique(),
+  discordId: text("discord_id").unique(),
   username: text("username").notNull(),
   avatar: text("avatar"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
