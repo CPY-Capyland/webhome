@@ -9,7 +9,7 @@
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:generate": "drizzle-kit generate",
-    "postbuild": "tsx script/migrate.ts"
+    "postbuild": "tsx script/run-second-migration.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
