@@ -34,6 +34,7 @@ passport.use(
 
         const newUser = {
           id: randomUUID(),
+          sessionId: randomUUID(),
           discordId: profile.id,
           username: profile.username,
           avatar: profile.avatar
