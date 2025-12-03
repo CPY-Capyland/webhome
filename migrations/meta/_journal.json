@@ -15,6 +15,13 @@
       "when": 1764770476873,
       "tag": "0001_rich_ikaris",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764774601625,
+      "tag": "0002_fine_sinister_six",
+      "breakpoints": true
     }
   ]
 }

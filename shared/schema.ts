@@ -6,11 +6,11 @@ import { z } from "zod";
 // Users table - simple session-based identification
 export const users = pgTable("users", {
   id: varchar("id", { length: 36 }).primaryKey(),
-  sessionId: text("session_id").notNull(),
-  discordId: text("discord_id").unique(),
-  username: text("username").notNull(),
-  avatar: text("avatar"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  sessionId: text("session_id").notNull(), // Add this line
+  discordId: text("discord_id").notNull().unique(), // notNull().unique()
+  username: text("username").notNull(), // notNull()
+  avatar: text("avatar"), // nullable
+  createdAt: timestamp("created_at").defaultNow().notNull(), // defaultNow().notNull()
 });
 
 // Houses table - one per user on the 500x500 grid
@@ -54,6 +54,12 @@ export const suggestions = pgTable("suggestions", {
   text: text("text").notNull(),
   submittedAt: timestamp("submitted_at").defaultNow().notNull(),
   reviewed: boolean("reviewed").default(false).notNull(),
+});
+
+export const userSessions = pgTable("user_sessions", {
+  sid: varchar("sid", { length: 255 }).primaryKey(),
+  sess: text("sess").notNull(),
+  expire: timestamp("expire", { withTimezone: true }).notNull(),
 });
 
 // Relations
@@ -105,6 +111,9 @@ export const insertSuggestionSchema = createInsertSchema(suggestions).omit({ sub
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export type InsertUserSession = z.infer<typeof createInsertSchema(userSessions)>; // Uncommented
+export type UserSession = typeof userSessions.$inferSelect;
 
 export type InsertHouse = z.infer<typeof insertHouseSchema>;
 export type House = typeof houses.$inferSelect;
