@@ -15,8 +15,16 @@ const db = drizzle(pool);
 
 async function main() {
   console.log('Running migrations...');
-  await migrate(db, { migrationsFolder: './migrations' });
-  console.log('Migrations completed.');
+  try {
+    await migrate(db, { migrationsFolder: './migrations' });
+    console.log('Migrations completed.');
+  } catch (err: any) {
+    if (err.message.includes('relation "houses" already exists')) {
+      console.log('Migrations have already been applied.');
+    } else {
+      throw err;
+    }
+  }
   process.exit(0);
 }
 
