@@ -103,9 +103,10 @@ export default function Home() {
       return res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/laws"] });
       toast({
-        title: "Proposition soumise",
-        description: "Votre proposition a été envoyée au gouvernement pour examen.",
+        title: "Loi publiée",
+        description: "Votre proposition de loi a été publiée et est maintenant visible par tous.",
       });
     },
     onError: (error: Error) => {
