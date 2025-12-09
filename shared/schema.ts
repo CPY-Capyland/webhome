@@ -129,7 +129,10 @@ export type InsertSuggestion = z.infer<typeof insertSuggestionSchema>;
 export type Suggestion = typeof suggestions.$inferSelect;
 
 // API response types
-export type HouseWithUser = House & { isCurrentUser?: boolean };
+export type HouseWithUser = House & { 
+  isCurrentUser?: boolean;
+  username: string; 
+};
 export type LawWithVotes = Law & { 
   upvotes: number; 
   downvotes: number; 

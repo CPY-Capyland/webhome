@@ -20,7 +20,7 @@ export interface IStorage {
   // Houses
   getHouse(userId: string): Promise<House | undefined>;
   getHouseByCoordinates(x: number, y: number): Promise<House | undefined>;
-  getAllHouses(): Promise<House[]>;
+  getAllHouses(): Promise<HouseWithUser[]>;
   createHouse(userId: string, x: number, y: number): Promise<House>;
   moveHouse(userId: string, x: number, y: number): Promise<House>;
   
@@ -71,8 +71,18 @@ export class DatabaseStorage implements IStorage {
     return house || undefined;
   }
 
-  async getAllHouses(): Promise<House[]> {
-    return db.select().from(houses);
+  async getAllHouses(): Promise<HouseWithUser[]> {
+    const result = await db.select({
+      id: houses.id,
+      userId: houses.userId,
+      x: houses.x,
+      y: houses.y,
+      placedAt: houses.placedAt,
+      lastMovedAt: houses.lastMovedAt,
+      username: users.username,
+    }).from(houses).leftJoin(users, eq(houses.userId, users.id));
+    
+    return result.map(r => ({ ...r, username: r.username || 'Unknown' }));
   }
 
   async createHouse(userId: string, x: number, y: number): Promise<House> {

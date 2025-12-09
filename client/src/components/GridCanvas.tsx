@@ -16,6 +16,7 @@ interface House {
   y: number;
   userId: string;
   isCurrentUser?: boolean;
+  username: string;
 }
 
 interface GridCanvasProps {
@@ -37,7 +38,7 @@ export default function GridCanvas({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number } | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
 
   const zoom = ZOOM_LEVELS[zoomIndex];
   const cellSize = BASE_CELL_SIZE * zoom;
@@ -148,7 +149,8 @@ export default function GridCanvas({
     const gridY = Math.floor((mouseY - offset.y) / cellSize);
 
     if (gridX >= 0 && gridX < GRID_SIZE && gridY >= 0 && gridY < GRID_SIZE) {
-      setHoveredCell({ x: gridX, y: gridY });
+      const house = housesMap.get(`${gridX},${gridY}`);
+      setHoveredCell({ x: gridX, y: gridY, house });
     } else {
       setHoveredCell(null);
     }
@@ -263,6 +265,11 @@ export default function GridCanvas({
           data-testid="text-coordinates"
         >
           ({hoveredCell.x}, {hoveredCell.y})
+          {hoveredCell.house && (
+            <span className="ml-2 font-sans font-bold">
+              {hoveredCell.house.username}
+            </span>
+          )}
         </div>
       )}
 
