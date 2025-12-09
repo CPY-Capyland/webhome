@@ -122,11 +122,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLawsWithVotes(userId?: string): Promise<LawWithVotes[]> {
-    const VOTING_DURATION_MS = 72 * 60 * 60 * 1000;
+    const VOTING_DELAY_MS = 24 * 60 * 60 * 1000;
+    const VOTING_DURATION_MS = 168 * 60 * 60 * 1000;
+    
     const allLaws = await db.select().from(laws);
     const allVotes = await db.select().from(votes);
+
+    for (const law of allLaws) {
+      if (law.status === "active" && !law.votingClosedAt) {
+        const votingStart = new Date(law.publishedAt.getTime() + VOTING_DELAY_MS);
+        const votingEnd = new Date(votingStart.getTime() + VOTING_DURATION_MS);
+        const now = new Date();
+
+        if (now >= votingEnd) {
+          const lawVotes = allVotes.filter(v => v.lawId === law.id);
+          const upvotes = lawVotes.filter(v => v.vote === "up").length;
+          const downvotes = lawVotes.filter(v => v.vote === "down").length;
+
+          let newStatus: "passed" | "rejected" | "pending" = "pending";
+          let newIsInTiebreak = false;
+
+          if (upvotes > downvotes) {
+            newStatus = "passed";
+          } else if (downvotes > upvotes) {
+            newStatus = "rejected";
+          } else {
+            newStatus = "pending";
+            newIsInTiebreak = true;
+          }
+
+          await db.update(laws)
+            .set({
+              status: newStatus,
+              isInTiebreak: newIsInTiebreak,
+              votingClosedAt: now,
+            })
+            .where(eq(laws.id, law.id));
+          
+          law.status = newStatus;
+          law.isInTiebreak = newIsInTiebreak;
+          law.votingClosedAt = now;
+        }
+      }
+    }
     
-    return allLaws.map(law => {
+    const lawsWithVotes = allLaws.map(law => {
       const lawVotes = allVotes.filter(v => v.lawId === law.id);
       const upvotes = lawVotes.filter(v => v.vote === "up").length;
       const downvotes = lawVotes.filter(v => v.vote === "down").length;
@@ -134,17 +174,16 @@ export class DatabaseStorage implements IStorage {
         ? lawVotes.find(v => v.userId === userId)?.vote || null 
         : null;
       
-      // Calculate votable status
-      let isVotable = law.status === "active";
+      let isVotable = false;
       let votingEndsAt: Date | undefined;
-      
-      if (isVotable) {
-        if (law.votingClosedAt) {
-          isVotable = law.isInTiebreak;
-        } else {
-          votingEndsAt = new Date(law.publishedAt.getTime() + VOTING_DURATION_MS);
-          isVotable = new Date() < votingEndsAt;
-        }
+
+      if (law.isInTiebreak) {
+        isVotable = true;
+      } else if (law.status === "active" && !law.votingClosedAt) {
+          const votingStart = new Date(law.publishedAt.getTime() + VOTING_DELAY_MS);
+          votingEndsAt = new Date(votingStart.getTime() + VOTING_DURATION_MS);
+          const now = new Date();
+          isVotable = now >= votingStart && now < votingEndsAt;
       }
       
       return {
@@ -154,9 +193,16 @@ export class DatabaseStorage implements IStorage {
         userVote,
         isVotable,
         votingEndsAt,
-        isInTiebreak: law.isInTiebreak,
       };
     });
+
+    lawsWithVotes.sort((a, b) => {
+      if (a.status === 'pending' && b.status !== 'pending') return -1;
+      if (a.status !== 'pending' && b.status === 'pending') return 1;
+      return b.publishedAt.getTime() - a.publishedAt.getTime();
+    });
+
+    return lawsWithVotes;
   }
 
   async createLaw(law: InsertLaw): Promise<Law> {
@@ -165,8 +211,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async closeLawVoting(id: string): Promise<void> {
+    const lawVotes = await db.select().from(votes).where(eq(votes.lawId, id));
+    const upvotes = lawVotes.filter(v => v.vote === "up").length;
+    const downvotes = lawVotes.filter(v => v.vote === "down").length;
+
+    let finalStatus: "passed" | "rejected" = "rejected";
+    if (upvotes > downvotes) {
+      finalStatus = "passed";
+    } else if (downvotes > upvotes) {
+      finalStatus = "rejected";
+    }
+
     await db.update(laws)
-      .set({ votingClosedAt: new Date(), isInTiebreak: false })
+      .set({ 
+        votingClosedAt: new Date(), 
+        isInTiebreak: false,
+        status: finalStatus
+      })
       .where(eq(laws.id, id));
   }
 

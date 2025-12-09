@@ -5,7 +5,8 @@ import { randomUUID } from "crypto";
 
 const COOLDOWN_HOURS = 24;
 const GRID_SIZE = 500;
-const VOTING_DURATION_HOURS = 72;
+const VOTING_DELAY_HOURS = 24;
+const VOTING_DURATION_HOURS = 168; // 1 week
 
 function isVotable(law: any): boolean {
   // Must be active status
@@ -16,10 +17,11 @@ function isVotable(law: any): boolean {
     return law.isInTiebreak;
   }
   
-  // Check if within 72 hours
   const now = new Date();
-  const votingDeadline = new Date(law.publishedAt.getTime() + VOTING_DURATION_HOURS * 60 * 60 * 1000);
-  return now < votingDeadline;
+  const votingStart = new Date(law.publishedAt.getTime() + VOTING_DELAY_HOURS * 60 * 60 * 1000);
+  const votingEnd = new Date(votingStart.getTime() + VOTING_DURATION_HOURS * 60 * 60 * 1000);
+
+  return now >= votingStart && now < votingEnd;
 }
 
 function canMoveHouse(lastMovedAt: Date): boolean {

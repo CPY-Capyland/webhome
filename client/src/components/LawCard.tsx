@@ -77,7 +77,7 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
 
   const statusColors = {
     active: "bg-primary text-primary-foreground",
-    pending: "bg-chart-4 text-white",
+    pending: "bg-destructive text-destructive-foreground",
     passed: "bg-status-online text-white",
     rejected: "bg-destructive text-destructive-foreground",
   };
