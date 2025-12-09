@@ -39,38 +39,81 @@ export default function GridCanvas({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
+  const pinchStartDistanceRef = useRef<number | null>(null);
 
   const zoom = ZOOM_LEVELS[zoomIndex];
   const cellSize = BASE_CELL_SIZE * zoom;
 
   const housesMap = new Map(houses.map((h) => [`${h.x},${h.y}`, h]));
+  
+  const getTouchPosition = (e: React.TouchEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return {x: 0, y: 0};
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: e.touches[0].clientX - rect.left,
+      y: e.touches[0].clientY - rect.top,
+    };
+  };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchStartDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
+    } else if (e.touches.length === 1) {
+      setIsDragging(true);
+      const pos = getTouchPosition(e);
+      setDragStart({ x: pos.x - offset.x, y: pos.y - offset.y });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (e.touches.length === 2 && pinchStartDistanceRef.current) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const newDistance = Math.sqrt(dx * dx + dy * dy);
+      const scale = newDistance / pinchStartDistanceRef.current;
+      
+      const newZoomIndex = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, zoomIndex + Math.log2(scale)));
+      setZoomIndex(newZoomIndex);
+
+    } else if (e.touches.length === 1 && isDragging) {
+      const pos = getTouchPosition(e);
+      setOffset({
+        x: pos.x - dragStart.x,
+        y: pos.y - dragStart.y,
+      });
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    pinchStartDistanceRef.current = null;
+    setIsDragging(false);
+  };
+  
   const drawGrid = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
-
     const { width, height } = canvas;
     ctx.clearRect(0, 0, width, height);
-
     const startX = Math.floor(-offset.x / cellSize);
     const startY = Math.floor(-offset.y / cellSize);
     const endX = Math.ceil((width - offset.x) / cellSize);
     const endY = Math.ceil((height - offset.y) / cellSize);
-
     const isDark = document.documentElement.classList.contains("dark");
-
     for (let x = Math.max(0, startX); x < Math.min(GRID_SIZE, endX); x++) {
       for (let y = Math.max(0, startY); y < Math.min(GRID_SIZE, endY); y++) {
         const screenX = x * cellSize + offset.x;
         const screenY = y * cellSize + offset.y;
         const key = `${x},${y}`;
         const house = housesMap.get(key);
-
         ctx.strokeStyle = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
         ctx.lineWidth = 0.5;
         ctx.strokeRect(screenX, screenY, cellSize, cellSize);
-
         if (house) {
           if (house.isCurrentUser) {
             ctx.fillStyle = isDark ? "hsl(217, 91%, 55%)" : "hsl(217, 91%, 45%)";
@@ -89,7 +132,6 @@ export default function GridCanvas({
           ctx.closePath();
           ctx.fill();
         }
-
         if (
           hoveredCell &&
           hoveredCell.x === x &&
@@ -256,6 +298,9 @@ export default function GridCanvas({
         }}
         onClick={handleClick}
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         data-testid="grid-canvas"
       />
 

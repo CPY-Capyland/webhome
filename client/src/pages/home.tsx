@@ -9,16 +9,13 @@ import { type Law } from "@/components/LawCard";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { House, LawWithVotes, User } from "@shared/schema";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import MobileMenu from "@/components/MobileMenu";
+import MobileContainer from "@/components/MobileContainer";
 
 type MobileView = "grid" | "laws" | "propose" | "feed";
 
 interface HouseWithUser extends House {
   isCurrentUser?: boolean;
+  username: string;
 }
 
 interface UserStatus {
@@ -35,8 +32,6 @@ export default function Home() {
   const { toast } = useToast();
   const [placementCoords, setPlacementCoords] = useState<{ x: number; y: number } | null>(null);
   const [isPlacementModalOpen, setIsPlacementModalOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [mobileView, setMobileView] = useState<MobileView>("grid");
 
   // Fetch current user
   const { data: user } = useQuery<User | null>({
@@ -167,6 +162,7 @@ export default function Home() {
   const handleConfirmPlacement = useCallback(() => {
     if (!placementCoords) return;
     placeHouseMutation.mutate(placementCoords);
+    setIsPlacementModalOpen(false);
   }, [placementCoords, placeHouseMutation]);
 
   const handleVote = useCallback(
@@ -197,57 +193,9 @@ export default function Home() {
         return;
       }
       suggestionMutation.mutate({ title, text });
-      if (isMobile) {
-        setMobileView("laws");
-      }
     },
-    [user, suggestionMutation, toast, isMobile]
+    [user, suggestionMutation, toast]
   );
-
-  // Transform laws for UI component
-  const transformedLaws: Law[] = laws.map((law) => ({
-    id: law.id,
-    title: law.title,
-    description: law.description,
-    fullText: law.fullText,
-    publishedAt: typeof law.publishedAt === 'string' ? law.publishedAt : law.publishedAt.toISOString(),
-    status: law.status as "active" | "pending" | "passed" | "rejected",
-    upvotes: law.upvotes,
-    downvotes: law.downvotes,
-    userVote: law.userVote,
-  }));
-  
-  const handleMenuClick = () => {
-    if (mobileView === "grid") {
-      setMobileView("laws");
-    }
-    setIsMenuOpen(true);
-  };
-
-  const renderMobileView = () => {
-    switch (mobileView) {
-      case "laws":
-        return (
-          <GovernanceSidebar
-            laws={transformedLaws}
-            canVote={hasHouse}
-            totalHouses={houses.length}
-            onVote={handleVote}
-          />
-        );
-      case "propose":
-        return (
-          <SuggestionForm
-            canSuggest={hasHouse}
-            onSuggestionSubmit={handleSuggestionSubmit}
-          />
-        );
-      case "feed":
-        return <div className="p-4">Nouveautés à venir...</div>;
-      default:
-        return null;
-    }
-  };
 
   return (
     <TooltipProvider>
@@ -258,41 +206,39 @@ export default function Home() {
           lastMoveTime={lastMoveTime}
           totalHouses={houses.length}
           gridSize={500}
-          onMenuClick={handleMenuClick}
-          showMenuButton={isMobile}
+          showMenuButton={false} // No menu button in this new layout
         />
 
         <div className="flex-1 flex overflow-hidden">
-          <GridCanvas
-            houses={houses}
-            userHouse={userHouse as any}
-            canPlace={canPlace}
-            onCellClick={handleCellClick}
-          />
-
           {isMobile ? (
-            <MobileMenu
-              isOpen={isMenuOpen}
-              onOpenChange={setIsMenuOpen}
-              currentView={mobileView}
-              onNavigate={(view) => {
-                if (view === 'grid') {
-                  setIsMenuOpen(false);
-                }
-                setMobileView(view);
-              }}
-            >
-              {renderMobileView()}
-            </MobileMenu>
-          ) : (
-            <GovernanceSidebar
-              laws={transformedLaws}
-              canVote={hasHouse}
-              canSuggest={hasHouse}
-              totalHouses={houses.length}
+            <MobileContainer
+              user={user}
+              houses={houses}
+              userHouse={userHouse}
+              canPlace={canPlace}
+              onCellClick={handleCellClick}
+              laws={laws}
+              hasHouse={hasHouse}
               onVote={handleVote}
               onSuggestionSubmit={handleSuggestionSubmit}
             />
+          ) : (
+            <>
+              <GridCanvas
+                houses={houses}
+                userHouse={userHouse}
+                canPlace={canPlace}
+                onCellClick={handleCellClick}
+              />
+              <GovernanceSidebar
+                laws={laws}
+                canVote={hasHouse}
+                canSuggest={hasHouse}
+                totalHouses={houses.length}
+                onVote={handleVote}
+                onSuggestionSubmit={handleSuggestionSubmit}
+              />
+            </>
           )}
         </div>
 
