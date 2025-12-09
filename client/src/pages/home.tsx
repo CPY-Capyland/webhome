@@ -58,15 +58,6 @@ export default function Home() {
     queryKey: ["/api/laws"],
   });
 
-  // Seed laws if none exist
-  useEffect(() => {
-    if (laws.length === 0) {
-      apiRequest("POST", "/api/admin/seed-laws").then(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/laws"] });
-      }).catch(() => {});
-    }
-  }, [laws.length]);
-
   // Place/move house mutation
   const placeHouseMutation = useMutation({
     mutationFn: async ({ x, y }: { x: number; y: number }) => {
