@@ -5,6 +5,8 @@ import Header from "@/components/Header";
 import GridCanvas from "@/components/GridCanvas";
 import GovernanceSidebar from "@/components/GovernanceSidebar";
 import PlacementModal from "@/components/PlacementModal";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { House, LawWithVotes as Law, User, HouseWithUser } from "@shared/schema";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileContainer from "@/components/MobileContainer";
