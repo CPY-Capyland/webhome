@@ -200,6 +200,27 @@ export default function GridCanvas({
     setZoomIndex((prev) => Math.max(prev - 1, 0));
   };
 
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const newZoomIndex = zoomIndex - Math.sign(e.deltaY);
+    if (newZoomIndex >= 0 && newZoomIndex < ZOOM_LEVELS.length) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      const newZoom = ZOOM_LEVELS[newZoomIndex];
+      const oldZoom = ZOOM_LEVELS[zoomIndex];
+
+      const newOffsetX = mouseX - (mouseX - offset.x) * (newZoom / oldZoom);
+      const newOffsetY = mouseY - (mouseY - offset.y) * (newZoom / oldZoom);
+      
+      setZoomIndex(newZoomIndex);
+      setOffset({ x: newOffsetX, y: newOffsetY });
+    }
+  };
+
   const handleReset = () => {
     setZoomIndex(2);
     setOffset({ x: 0, y: 0 });
@@ -232,6 +253,7 @@ export default function GridCanvas({
           setHoveredCell(null);
         }}
         onClick={handleClick}
+        onWheel={handleWheel}
         data-testid="grid-canvas"
       />
 

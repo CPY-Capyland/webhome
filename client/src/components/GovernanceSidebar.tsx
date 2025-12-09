@@ -7,10 +7,10 @@ import SuggestionForm from "./SuggestionForm";
 interface GovernanceSidebarProps {
   laws: Law[];
   canVote: boolean;
-  canSuggest: boolean;
   totalHouses: number;
   onVote: (lawId: string, vote: "up" | "down" | null) => void;
-  onSuggestionSubmit: (title: string, text: string) => void;
+  canSuggest?: boolean;
+  onSuggestionSubmit?: (title: string, text: string) => void;
 }
 
 export default function GovernanceSidebar({
@@ -63,19 +63,23 @@ export default function GovernanceSidebar({
             </div>
           </div>
 
-          <Separator />
-
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              Faites entendre votre voix
-            </h3>
-            <SuggestionForm
-              canSuggest={canSuggest}
-              onSubmit={onSuggestionSubmit}
-            />
-          </div>
+          {onSuggestionSubmit && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                  Faites entendre votre voix
+                </h3>
+                <SuggestionForm
+                  canSuggest={canSuggest ?? false}
+                  onSuggestionSubmit={onSuggestionSubmit}
+                />
+              </div>
+            </>
+          )}
         </div>
       </ScrollArea>
     </div>
   );
 }
+

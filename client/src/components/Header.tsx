@@ -1,4 +1,4 @@
-import { Home, Grid3X3, Moon, Sun, LogIn, LogOut } from "lucide-react";
+import { Home, Grid3X3, Moon, Sun, LogIn, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import CooldownTimer from "./CooldownTimer";
@@ -18,6 +18,8 @@ interface HeaderProps {
   lastMoveTime: Date | null;
   totalHouses: number;
   gridSize: number;
+  onMenuClick?: () => void;
+  showMenuButton?: boolean;
 }
 
 export default function Header({
@@ -26,6 +28,8 @@ export default function Header({
   lastMoveTime,
   totalHouses,
   gridSize,
+  onMenuClick,
+  showMenuButton,
 }: HeaderProps) {
   const [isDark, setIsDark] = useState(false);
 
@@ -43,12 +47,17 @@ export default function Header({
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 gap-4">
       <div className="flex items-center gap-3">
+        {showMenuButton && (
+          <Button size="icon" variant="ghost" onClick={onMenuClick}>
+            <Menu className="h-6 w-6" />
+          </Button>
+        )}
         <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
           <Grid3X3 className="h-6 w-6 text-primary-foreground" />
         </div>
         <div>
-      <h1 className="text-xl font-bold">Capyland</h1>
-      <p className="text-sm text-gray-500">Carte habitable et espace politique</p>
+          <h1 className="text-xl font-bold">Capyland</h1>
+          <p className="text-sm text-gray-500">Carte habitable et espace politique</p>
         </div>
       </div>
 
@@ -114,3 +123,4 @@ export default function Header({
     </header>
   );
 }
+
