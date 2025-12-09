@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { randomUUID } from "crypto";
+import type { InsertLaw } from "@shared/schema";
 
 const COOLDOWN_HOURS = 24;
 const GRID_SIZE = 500;
@@ -217,6 +218,20 @@ export async function registerRoutes(
       }
       
       const suggestion = await storage.createSuggestion(userId, title.trim(), text.trim());
+
+      // Automatically create a law from the suggestion
+      const description = text.trim().substring(0, 150) + (text.trim().length > 150 ? "..." : "");
+      
+      const newLaw: InsertLaw = {
+        id: randomUUID(),
+        title: title.trim(),
+        description: description,
+        fullText: text.trim(),
+        status: 'active',
+      };
+
+      await storage.createLaw(newLaw);
+
       res.json(suggestion);
     } catch (error) {
       console.error("Error creating suggestion:", error);
