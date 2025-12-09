@@ -107,12 +107,13 @@ export const insertHouseSchema = createInsertSchema(houses).omit({ placedAt: tru
 export const insertLawSchema = createInsertSchema(laws).omit({ publishedAt: true });
 export const insertVoteSchema = createInsertSchema(votes).omit({ votedAt: true });
 export const insertSuggestionSchema = createInsertSchema(suggestions).omit({ submittedAt: true, reviewed: true });
+export const insertUserSessionSchema = createInsertSchema(userSessions);
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-export type InsertUserSession = z.infer<typeof createInsertSchema(userSessions)>; // Uncommented
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
 
 export type InsertHouse = z.infer<typeof insertHouseSchema>;
