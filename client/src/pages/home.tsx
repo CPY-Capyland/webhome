@@ -5,18 +5,9 @@ import Header from "@/components/Header";
 import GridCanvas from "@/components/GridCanvas";
 import GovernanceSidebar from "@/components/GovernanceSidebar";
 import PlacementModal from "@/components/PlacementModal";
-import { type Law } from "@/components/LawCard";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { House, LawWithVotes, User } from "@shared/schema";
+import type { House, LawWithVotes as Law, User, HouseWithUser } from "@shared/schema";
+import { useIsMobile } from "@/hooks/use-mobile";
 import MobileContainer from "@/components/MobileContainer";
-
-type MobileView = "grid" | "laws" | "propose" | "feed";
-
-interface HouseWithUser extends House {
-  isCurrentUser?: boolean;
-  username: string;
-}
 
 interface UserStatus {
   hasHouse: boolean;
@@ -49,7 +40,7 @@ export default function Home() {
   });
 
   // Fetch laws
-  const { data: laws = [] } = useQuery<LawWithVotes[]>({
+  const { data: laws = [] } = useQuery<Law[]>({ // Changed LawWithVotes[] to Law[]
     queryKey: ["/api/laws"],
   });
 
@@ -63,6 +54,7 @@ export default function Home() {
       queryClient.invalidateQueries({ queryKey: ["/api/houses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/houses/mine"] });
+      setIsPlacementModalOpen(false); // Added to close modal on success
     },
     onError: (error: Error) => {
       toast({
@@ -115,10 +107,11 @@ export default function Home() {
 
   const hasHouse = userStatus?.hasHouse ?? false;
   const canPlace = !hasHouse || (userStatus?.house?.canMove ?? true);
-  const userHouse = userStatus?.house ? {
+  const userHouse = userStatus?.house && user ? { // Added '&& user'
     x: userStatus.house.x,
     y: userStatus.house.y,
-    userId: user?.id || "current-user",
+    userId: user.id, // Changed from user?.id || "current-user"
+    username: user.username, // Added username
     isCurrentUser: true,
   } : null;
   const lastMoveTime = userStatus?.house?.lastMovedAt ? new Date(userStatus.house.lastMovedAt) : null;
@@ -159,11 +152,13 @@ export default function Home() {
     [user, canPlace, houses, toast]
   );
 
-  const handleConfirmPlacement = useCallback(() => {
-    if (!placementCoords) return;
-    placeHouseMutation.mutate(placementCoords);
-    setIsPlacementModalOpen(false);
-  }, [placementCoords, placeHouseMutation]);
+  const handleConfirmPlacement = useCallback(
+    () => {
+      if (!placementCoords) return;
+      placeHouseMutation.mutate(placementCoords);
+    },
+    [placementCoords, placeHouseMutation]
+  );
 
   const handleVote = useCallback(
     (lawId: string, vote: "up" | "down" | null) => {

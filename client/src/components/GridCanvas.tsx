@@ -78,7 +78,25 @@ export default function GridCanvas({
       const scale = newDistance / pinchStartDistanceRef.current;
       
       const newZoomIndex = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, zoomIndex + Math.log2(scale)));
-      setZoomIndex(newZoomIndex);
+
+      if (newZoomIndex !== zoomIndex) {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+
+        const newZoom = ZOOM_LEVELS[newZoomIndex];
+        const oldZoom = ZOOM_LEVELS[zoomIndex];
+
+        const newOffsetX = midX - (midX - offset.x) * (newZoom / oldZoom);
+        const newOffsetY = midY - (midY - offset.y) * (newZoom / oldZoom);
+        
+        setZoomIndex(newZoomIndex);
+        setOffset({ x: newOffsetX, y: newOffsetY });
+        pinchStartDistanceRef.current = newDistance; // Update the start distance for smooth zooming
+      }
 
     } else if (e.touches.length === 1 && isDragging) {
       const pos = getTouchPosition(e);

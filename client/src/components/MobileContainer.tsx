@@ -4,14 +4,14 @@ import GovernanceSidebar from "@/components/GovernanceSidebar";
 import SuggestionForm from "@/components/SuggestionForm";
 import { Button } from "@/components/ui/button";
 import { Home, List, Plus, Bell } from "lucide-react";
-import type { House, LawWithVotes, User } from "@shared/schema";
+import type { HouseWithUser, LawWithVotes, User } from "@shared/schema";
 
 type MobileView = "grid" | "laws" | "propose" | "feed";
 
 interface MobileContainerProps {
   user: User | null | undefined;
-  houses: any[];
-  userHouse: any;
+  houses: HouseWithUser[];
+  userHouse: HouseWithUser | null;
   canPlace: boolean;
   onCellClick: (x: number, y: number) => void;
   laws: LawWithVotes[];
@@ -46,14 +46,12 @@ export default function MobileContainer({
         );
       case "laws":
         return (
-          <div className="p-4 h-full overflow-y-auto">
-            <GovernanceSidebar
-              laws={laws}
-              canVote={hasHouse}
-              totalHouses={houses.length}
-              onVote={onVote}
-            />
-          </div>
+          <GovernanceSidebar
+            laws={laws}
+            canVote={hasHouse}
+            totalHouses={houses.length}
+            onVote={onVote}
+          />
         );
       case "propose":
         return (
@@ -85,7 +83,7 @@ export default function MobileContainer({
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-hidden">{renderContent()}</div>
-      <div className="flex justify-around p-2 border-t">
+      <div className="flex justify-around p-2 border-t bg-background">
         <NavButton view="grid" current={mobileView}>
           <Home />
           <span>Accueil</span>
