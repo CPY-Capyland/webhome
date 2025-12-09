@@ -134,6 +134,7 @@ export type LawWithVotes = Law & {
   upvotes: number; 
   downvotes: number; 
   userVote?: "up" | "down" | null;
+  userVotedAt?: Date;
   isVotable?: boolean;
   votingEndsAt?: Date;
   isInTiebreak?: boolean;

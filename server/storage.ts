@@ -167,12 +167,11 @@ export class DatabaseStorage implements IStorage {
     }
     
     const lawsWithVotes = allLaws.map(law => {
-      const lawVotes = allVotes.filter(v => v.lawId === law.id);
-      const upvotes = lawVotes.filter(v => v.vote === "up").length;
-      const downvotes = lawVotes.filter(v => v.vote === "down").length;
-      const userVote = userId 
-        ? lawVotes.find(v => v.userId === userId)?.vote || null 
+      const userVoteObject = userId 
+        ? lawVotes.find(v => v.userId === userId)
         : null;
+      const userVote = userVoteObject?.vote || null;
+      const userVotedAt = userVoteObject?.votedAt || undefined;
       
       let isVotable = false;
       let votingEndsAt: Date | undefined;
@@ -191,6 +190,7 @@ export class DatabaseStorage implements IStorage {
         upvotes,
         downvotes,
         userVote,
+        userVotedAt,
         isVotable,
         votingEndsAt,
       };

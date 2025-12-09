@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ThumbsUp, ThumbsDown, FileText, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,21 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-export interface Law {
-  id: string;
-  title: string;
-  description: string;
-  fullText: string;
-  publishedAt: string;
-  status: "active" | "pending" | "passed" | "rejected";
-  upvotes: number;
-  downvotes: number;
-  userVote?: "up" | "down" | null;
-  isVotable?: boolean;
-  votingEndsAt?: string;
-  isInTiebreak?: boolean;
-}
+import { type LawWithVotes as Law } from "@shared/schema";
 
 interface LawCardProps {
   law: Law;
@@ -33,11 +19,55 @@ interface LawCardProps {
   onVote: (lawId: string, vote: "up" | "down" | null) => void;
 }
 
-const statusLabels = {
-  active: "actif",
-  pending: "en attente",
-  passed: "adopté",
-  rejected: "rejeté",
+const VOTING_DELAY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const VOTE_CHANGE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+const getVotingStatus = (law: Law, canVote: boolean) => {
+  const now = new Date();
+  const publishedAt = new Date(law.publishedAt);
+  const votingStart = new Date(publishedAt.getTime() + VOTING_DELAY_MS);
+  const votingEndsAt = law.votingEndsAt ? new Date(law.votingEndsAt) : null;
+  const userVotedAt = law.userVotedAt ? new Date(law.userVotedAt) : null;
+
+  let statusText: string;
+  let statusColorClass: string;
+  let canChangeVote = false;
+  let timeLeftToChangeVote: number | null = null;
+
+  if (law.status === "passed") {
+    statusText = "Adoptée";
+    statusColorClass = "bg-green-500 text-white";
+  } else if (law.status === "rejected") {
+    statusText = "Rejetée";
+    statusColorClass = "bg-red-500 text-white";
+  } else if (law.isInTiebreak) {
+    statusText = "Égalité";
+    statusColorClass = "bg-yellow-500 text-white";
+  } else if (now < votingStart) {
+    statusText = "Proposition";
+    statusColorClass = "bg-orange-500 text-white";
+  } else if (votingEndsAt && now < votingEndsAt) {
+    if (law.userVote && userVotedAt) {
+      const voteChangeEnd = new Date(userVotedAt.getTime() + VOTE_CHANGE_WINDOW_MS);
+      if (now < voteChangeEnd) {
+        statusText = "Vote modifiable";
+        statusColorClass = "bg-yellow-400 text-black";
+        canChangeVote = true;
+        timeLeftToChangeVote = voteChangeEnd.getTime() - now.getTime();
+      } else {
+        statusText = "A voté";
+        statusColorClass = "bg-green-600 text-white";
+      }
+    } else {
+      statusText = "Vote ouvert";
+      statusColorClass = "bg-blue-500 text-white";
+    }
+  } else {
+    statusText = "Terminée";
+    statusColorClass = "bg-gray-500 text-white";
+  }
+
+  return { statusText, statusColorClass, canChangeVote, timeLeftToChangeVote };
 };
 
 export default function LawCard({ law, canVote, canUserVote = true, onVote }: LawCardProps) {
@@ -45,18 +75,34 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
   const [currentVote, setCurrentVote] = useState<"up" | "down" | null>(
     law.userVote || null
   );
-  const [votes, setVotes] = useState({
+  const [votesCount, setVotesCount] = useState({
     up: law.upvotes,
     down: law.downvotes,
   });
+  const [localUserVotedAt, setLocalUserVotedAt] = useState<Date | undefined>(law.userVotedAt);
 
+  const totalVoters = votesCount.up + votesCount.down;
   const isVotable = canVote && canUserVote && (law.isVotable !== false);
+  const { statusText, statusColorClass, canChangeVote, timeLeftToChangeVote } = useMemo(
+    () => getVotingStatus(law, isVotable),
+    [law, isVotable, currentVote, localUserVotedAt]
+  );
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    if (timeLeftToChangeVote !== null && timeLeftToChangeVote > 0) {
+      timer = setTimeout(() => {
+        setLocalUserVotedAt(undefined); // Force re-evaluation of status
+      }, timeLeftToChangeVote);
+    }
+    return () => clearTimeout(timer);
+  }, [timeLeftToChangeVote]);
 
   const handleVote = (vote: "up" | "down") => {
-    if (!isVotable) return;
+    if (!isVotable && !canChangeVote) return;
 
     let newVote: "up" | "down" | null;
-    const newVotes = { ...votes };
+    const newVotes = { ...votesCount };
 
     if (currentVote === vote) {
       newVote = null;
@@ -71,16 +117,13 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
     }
 
     setCurrentVote(newVote);
-    setVotes(newVotes);
+    setVotesCount(newVotes);
+    setLocalUserVotedAt(new Date()); // Update local voted at timestamp
     onVote(law.id, newVote);
   };
 
-  const statusColors = {
-    active: "bg-primary text-primary-foreground",
-    pending: "bg-destructive text-destructive-foreground",
-    passed: "bg-status-online text-white",
-    rejected: "bg-destructive text-destructive-foreground",
-  };
+  const publishedDate = new Date(law.publishedAt).toLocaleDateString('fr-FR');
+  const votingEndsDate = law.votingEndsAt ? new Date(law.votingEndsAt).toLocaleDateString('fr-FR') : 'N/A';
 
   return (
     <Card className="hover-elevate" data-testid={`card-law-${law.id}`}>
@@ -90,22 +133,17 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
             {law.title}
           </CardTitle>
           <div className="flex gap-1 flex-wrap justify-end">
-            <Badge className={`text-[10px] px-1.5 py-0 ${statusColors[law.status]}`}>
-              {statusLabels[law.status]}
+            <Badge className={`text-[10px] px-1.5 py-0 ${statusColorClass}`}>
+              {statusText}
             </Badge>
-            {!isVotable && law.status === "active" && (
-              <Badge className="text-[10px] px-1.5 py-0 bg-muted text-muted-foreground">
-                {law.isInTiebreak ? "Égalité" : "Vote fermé"}
-              </Badge>
-            )}
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3 w-3" />
-          <span>{new Date(law.publishedAt).toLocaleDateString('fr-FR')}</span>
-          {law.votingEndsAt && isVotable && (
+          <span>Publiée le {publishedDate}</span>
+          {law.status === "active" && votingEndsAt && (
             <span className="ml-2">
-              • Vote jusqu'au {new Date(law.votingEndsAt).toLocaleDateString('fr-FR')}
+              • Vote se termine le {votingEndsDate}
             </span>
           )}
         </div>
@@ -122,25 +160,28 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
               size="sm"
               variant={currentVote === "up" ? "default" : "secondary"}
               onClick={() => handleVote("up")}
-              disabled={!isVotable}
+              disabled={!isVotable && !canChangeVote}
               className="gap-1"
               data-testid={`button-upvote-${law.id}`}
             >
               <ThumbsUp className="h-3.5 w-3.5" />
-              <span>{votes.up}</span>
+              <span>{votesCount.up}</span>
             </Button>
 
             <Button
               size="sm"
               variant={currentVote === "down" ? "destructive" : "secondary"}
               onClick={() => handleVote("down")}
-              disabled={!isVotable}
+              disabled={!isVotable && !canChangeVote}
               className="gap-1"
               data-testid={`button-downvote-${law.id}`}
             >
               <ThumbsDown className="h-3.5 w-3.5" />
-              <span>{votes.down}</span>
+              <span>{votesCount.down}</span>
             </Button>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Total votants: {totalVoters}
           </div>
 
           <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
@@ -161,19 +202,15 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
                   <DialogTitle className="text-xl font-serif">
                     {law.title}
                   </DialogTitle>
-                  <Badge className={`text-[10px] px-1.5 py-0 ${statusColors[law.status]}`}>
-                    {statusLabels[law.status]}
+                  <Badge className={`text-[10px] px-1.5 py-0 ${statusColorClass}`}>
+                    {statusText}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   <span>
                     Publié le{" "}
-                    {new Date(law.publishedAt).toLocaleDateString("fr-FR", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                    {publishedDate}
                   </span>
                 </div>
               </DialogHeader>
@@ -188,12 +225,12 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
                     <Button
                       variant={currentVote === "up" ? "default" : "secondary"}
                       onClick={() => handleVote("up")}
-                      disabled={!isVotable}
+                      disabled={!isVotable && !canChangeVote}
                       className="gap-2"
                       data-testid={`button-modal-upvote-${law.id}`}
                     >
                       <ThumbsUp className="h-4 w-4" />
-                      <span>Pour ({votes.up})</span>
+                      <span>Pour ({votesCount.up})</span>
                     </Button>
 
                     <Button
@@ -201,16 +238,16 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
                         currentVote === "down" ? "destructive" : "secondary"
                       }
                       onClick={() => handleVote("down")}
-                      disabled={!isVotable}
+                      disabled={!isVotable && !canChangeVote}
                       className="gap-2"
                       data-testid={`button-modal-downvote-${law.id}`}
                     >
                       <ThumbsDown className="h-4 w-4" />
-                      <span>Contre ({votes.down})</span>
+                      <span>Contre ({votesCount.down})</span>
                     </Button>
                   </div>
 
-                  {!isVotable && (
+                  {(!isVotable && !canChangeVote) && (
                     <p className="text-sm text-muted-foreground">
                       {!canVote ? "Placez une maison pour voter" : "Vote fermé"}
                     </p>
@@ -221,7 +258,12 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
           </Dialog>
         </div>
 
-        {!isVotable && (
+        {timeLeftToChangeVote !== null && timeLeftToChangeVote > 0 && (
+          <p className="text-xs text-center text-yellow-600">
+            Vous avez {Math.ceil(timeLeftToChangeVote / 1000)} secondes pour changer votre vote.
+          </p>
+        )}
+        {(!isVotable && !canChangeVote) && (
           <p className="text-xs text-muted-foreground text-center">
             {!canVote ? "Placez une maison sur la grille pour voter" : "Le vote n'est plus disponible"}
           </p>
