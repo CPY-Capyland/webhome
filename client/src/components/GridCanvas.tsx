@@ -9,7 +9,8 @@ import {
 
 const GRID_SIZE = 500;
 const BASE_CELL_SIZE = 16;
-const ZOOM_LEVELS = [0.25, 0.5, 1, 2, 4];
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 4;
 
 interface House {
   x: number;
@@ -34,14 +35,13 @@ export default function GridCanvas({
 }: GridCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [zoomIndex, setZoomIndex] = useState(2);
+  const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
   const pinchStartDistanceRef = useRef<number | null>(null);
 
-  const zoom = ZOOM_LEVELS[zoomIndex];
   const cellSize = BASE_CELL_SIZE * zoom;
 
   const housesMap = new Map(houses.map((h) => [`${h.x},${h.y}`, h]));
@@ -77,9 +77,9 @@ export default function GridCanvas({
       const newDistance = Math.sqrt(dx * dx + dy * dy);
       const scale = newDistance / pinchStartDistanceRef.current;
       
-      const newZoomIndex = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, zoomIndex + Math.log2(scale)));
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * scale));
 
-      if (newZoomIndex !== zoomIndex) {
+      if (newZoom !== zoom) {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
@@ -87,15 +87,12 @@ export default function GridCanvas({
         const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
         const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
 
-        const newZoom = ZOOM_LEVELS[newZoomIndex];
-        const oldZoom = ZOOM_LEVELS[zoomIndex];
-
-        const newOffsetX = midX - (midX - offset.x) * (newZoom / oldZoom);
-        const newOffsetY = midY - (midY - offset.y) * (newZoom / oldZoom);
+        const newOffsetX = midX - (midX - offset.x) * (newZoom / zoom);
+        const newOffsetY = midY - (midY - offset.y) * (newZoom / zoom);
         
-        setZoomIndex(newZoomIndex);
+        setZoom(newZoom);
         setOffset({ x: newOffsetX, y: newOffsetY });
-        pinchStartDistanceRef.current = newDistance; // Update the start distance for smooth zooming
+        pinchStartDistanceRef.current = newDistance;
       }
 
     } else if (e.touches.length === 1 && isDragging) {
@@ -254,37 +251,28 @@ export default function GridCanvas({
     }
   };
 
-  const handleZoomIn = () => {
-    setZoomIndex((prev) => Math.min(prev + 1, ZOOM_LEVELS.length - 1));
-  };
+  const handleZoom = (delta: number, mouseX: number, mouseY: number) => {
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * delta));
+    if (newZoom !== zoom) {
+      const newOffsetX = mouseX - (mouseX - offset.x) * (newZoom / zoom);
+      const newOffsetY = mouseY - (mouseY - offset.y) * (newZoom / zoom);
+      setZoom(newZoom);
+      setOffset({ x: newOffsetX, y: newOffsetY });
+    }
+  }
 
-  const handleZoomOut = () => {
-    setZoomIndex((prev) => Math.max(prev - 1, 0));
-  };
+  const handleZoomIn = () => handleZoom(1.5, canvasRef.current!.width / 2, canvasRef.current!.height / 2);
+  const handleZoomOut = () => handleZoom(1 / 1.5, canvasRef.current!.width / 2, canvasRef.current!.height / 2);
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const newZoomIndex = zoomIndex - Math.sign(e.deltaY);
-    if (newZoomIndex >= 0 && newZoomIndex < ZOOM_LEVELS.length) {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      
-      const newZoom = ZOOM_LEVELS[newZoomIndex];
-      const oldZoom = ZOOM_LEVELS[zoomIndex];
-
-      const newOffsetX = mouseX - (mouseX - offset.x) * (newZoom / oldZoom);
-      const newOffsetY = mouseY - (mouseY - offset.y) * (newZoom / oldZoom);
-      
-      setZoomIndex(newZoomIndex);
-      setOffset({ x: newOffsetX, y: newOffsetY });
-    }
+    const delta = e.deltaY > 0 ? 1 / 1.1 : 1.1;
+    const rect = canvasRef.current!.getBoundingClientRect();
+    handleZoom(delta, e.clientX - rect.left, e.clientY - rect.top);
   };
 
   const handleReset = () => {
-    setZoomIndex(2);
+    setZoom(1);
     setOffset({ x: 0, y: 0 });
   };
 
@@ -301,7 +289,7 @@ export default function GridCanvas({
   return (
     <div
       ref={containerRef}
-      className="relative flex-1 bg-background overflow-hidden"
+      className="relative flex-1 bg-background overflow-hidden touch-none"
       data-testid="grid-container"
     >
       <canvas
@@ -343,7 +331,7 @@ export default function GridCanvas({
               size="icon"
               variant="secondary"
               onClick={handleZoomIn}
-              disabled={zoomIndex >= ZOOM_LEVELS.length - 1}
+              disabled={zoom >= MAX_ZOOM}
               data-testid="button-zoom-in"
             >
               <ZoomIn className="h-4 w-4" />
@@ -358,7 +346,7 @@ export default function GridCanvas({
               size="icon"
               variant="secondary"
               onClick={handleZoomOut}
-              disabled={zoomIndex <= 0}
+              disabled={zoom <= MIN_ZOOM}
               data-testid="button-zoom-out"
             >
               <ZoomOut className="h-4 w-4" />

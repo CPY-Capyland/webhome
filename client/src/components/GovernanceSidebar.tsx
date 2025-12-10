@@ -11,6 +11,7 @@ interface GovernanceSidebarProps {
   onVote: (lawId: string, vote: "up" | "down" | null) => void;
   canSuggest?: boolean;
   onSuggestionSubmit?: (title: string, text: string) => void;
+  isMobile?: boolean;
 }
 
 export default function GovernanceSidebar({
@@ -20,11 +21,12 @@ export default function GovernanceSidebar({
   totalHouses,
   onVote,
   onSuggestionSubmit,
+  isMobile,
 }: GovernanceSidebarProps) {
   const activeLaws = laws.filter((l) => l.status === "active").length;
 
   return (
-    <div className="w-80 border-l border-border bg-sidebar flex flex-col h-full">
+    <div className={`${isMobile ? 'w-full' : 'w-80 border-l'} border-border bg-sidebar flex flex-col h-full`}>
       <div className="p-4 border-b border-sidebar-border">
         <h2 className="text-lg font-serif font-semibold">Gouvernance</h2>
         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">

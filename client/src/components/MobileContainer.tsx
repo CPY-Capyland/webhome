@@ -51,6 +51,7 @@ export default function MobileContainer({
             canVote={hasHouse}
             totalHouses={houses.length}
             onVote={onVote}
+            isMobile
           />
         );
       case "propose":
