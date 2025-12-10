@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Users, Plus } from "lucide-react";
+import { FileText, Users, Plus, Search } from "lucide-react";
 import LawCard from "./LawCard";
 import SuggestionForm from "./SuggestionForm";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { LawWithVotes as Law } from "@shared/schema";
 
 interface GovernanceSidebarProps {
@@ -27,7 +29,12 @@ export default function GovernanceSidebar({
   isMobile,
   setMobileView,
 }: GovernanceSidebarProps) {
+  const [searchQuery, setSearchQuery] = useState("");
   const activeLaws = laws.filter((l) => l.status === "active").length;
+
+  const filteredLaws = laws.filter((law) =>
+    law.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className={`relative ${isMobile ? 'w-full' : 'w-80 border-l'} border-border bg-sidebar flex flex-col h-full`}>
@@ -45,6 +52,18 @@ export default function GovernanceSidebar({
         </div>
       </div>
 
+      <div className="p-4 border-b border-sidebar-border">
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher une loi..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
           <div>
@@ -52,8 +71,8 @@ export default function GovernanceSidebar({
               Lois publiées
             </h3>
             <div className="space-y-4">
-              {laws.length > 0 ? (
-                laws.map((law) => (
+              {filteredLaws.length > 0 ? (
+                filteredLaws.map((law) => (
                   <LawCard
                     key={law.id}
                     law={law}
@@ -63,7 +82,7 @@ export default function GovernanceSidebar({
                 ))
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  Aucune loi n'a encore été publiée.
+                  {laws.length > 0 ? "Aucune loi ne correspond à votre recherche." : "Aucune loi n'a encore été publiée."}
                 </p>
               )}
             </div>
