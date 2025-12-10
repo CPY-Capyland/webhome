@@ -9,6 +9,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { User } from "@shared/schema";
 
 interface PlacementModalProps {
   isOpen: boolean;
@@ -16,6 +21,8 @@ interface PlacementModalProps {
   coordinates: { x: number; y: number } | null;
   isMove: boolean;
   onConfirm: () => void;
+  jobs: any[];
+  user: User | null;
 }
 
 export default function PlacementModal({
@@ -24,12 +31,37 @@ export default function PlacementModal({
   coordinates,
   isMove,
   onConfirm,
+  jobs,
+  user,
 }: PlacementModalProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isPlacing, setIsPlacing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<string | undefined>(undefined);
+
+  const chooseJobMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      const res = await apiRequest("POST", "/api/jobs/choose", { jobId });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Échec du choix du métier",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleConfirm = async () => {
     setIsPlacing(true);
+    if (selectedJob) {
+      await chooseJobMutation.mutateAsync(selectedJob);
+    }
     await new Promise((resolve) => setTimeout(resolve, 500));
     onConfirm();
     setIsPlacing(false);
@@ -83,6 +115,24 @@ export default function PlacementModal({
                   <p className="text-sm text-muted-foreground">Coordonnées de la grille</p>
                 </div>
               </div>
+
+              {!isMove && !user?.jobId && (
+                <div className="mt-6">
+                  <p className="font-medium mb-2">Choisissez votre premier métier</p>
+                  <Select onValueChange={setSelectedJob}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un métier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jobs.map((job) => (
+                        <SelectItem key={job.id} value={job.id}>
+                          {job.name} (Salaire: {job.grossSalary})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {isMove && (
                 <div className="mt-6 p-3 rounded-md bg-chart-4/10 border border-chart-4/20">

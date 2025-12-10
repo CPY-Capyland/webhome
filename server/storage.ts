@@ -24,6 +24,7 @@ export interface IStorage {
   createHouse(userId: string, x: number, y: number): Promise<House>;
   moveHouse(userId: string, x: number, y: number): Promise<House>;
   updateHouseColor(userId: string, color: string): Promise<House>;
+  deleteHouse(userId: string): Promise<void>;
   
   // Laws
   getLaw(id: string): Promise<Law | undefined>;
@@ -136,6 +137,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(houses.userId, userId))
       .returning();
     return house;
+  }
+
+  async deleteHouse(userId: string): Promise<void> {
+    await db.delete(houses).where(eq(houses.userId, userId));
   }
 
   // Laws

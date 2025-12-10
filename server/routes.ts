@@ -162,6 +162,18 @@ export async function registerRoutes(
     }
   });
 
+  // Delete house
+  app.delete("/api/houses", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user.id;
+      await storage.deleteHouse(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting house:", error);
+      res.status(500).json({ error: "Échec de la suppression de la maison" });
+    }
+  });
+
   // Get all laws with vote counts
   app.get("/api/laws", async (req: Request, res: Response) => {
     try {
