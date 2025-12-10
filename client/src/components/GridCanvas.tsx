@@ -295,8 +295,7 @@ export default function GridCanvas({
     >
       <canvas
         ref={canvasRef}
-        className="cursor-grab active:cursor-grabbing"
-        style={{ width: "100%", height: "100%" }}
+        className="cursor-grab active:cursor-grabbing w-full h-full"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

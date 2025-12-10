@@ -249,12 +249,14 @@ export default function Home() {
             />
           ) : (
             <>
-              <GridCanvas
-                houses={houses}
-                userHouse={userHouse}
-                canPlace={canPlace}
-                onCellClick={handleCellClick}
-              />
+              <div className="flex-1 min-w-0">
+                <GridCanvas
+                  houses={houses}
+                  userHouse={userHouse}
+                  canPlace={canPlace}
+                  onCellClick={handleCellClick}
+                />
+              </div>
               <GovernanceSidebar
                 laws={laws}
                 canVote={hasHouse}
