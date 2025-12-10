@@ -280,7 +280,7 @@ export default function Home() {
           showMenuButton={false} // No menu button in this new layout
         />
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 relative">
           {isMobile ? (
             <MobileContainer
               user={user}
@@ -290,13 +290,13 @@ export default function Home() {
               onCellClick={handleCellClick}
               laws={laws}
               hasHouse={hasHouse}
-              canSuggest={hasHouse}
+              canSuggest={canSuggest}
               onVote={handleVote}
               onSuggestionSubmit={handleSuggestionSubmit}
             />
           ) : (
             <>
-              <div className="flex-1 min-w-0 h-full">
+              <div className="absolute inset-0">
                 <GridCanvas
                   houses={houses}
                   userHouse={userHouse}
@@ -308,16 +308,18 @@ export default function Home() {
                   onDeleteHouse={onDeleteHouse}
                 />
               </div>
-              <GovernanceSidebar
-                laws={laws}
-                canVote={hasHouse}
-                canSuggest={hasHouse}
-                totalHouses={houses.length}
-                onVote={handleVote}
-                onSuggestionSubmit={handleSuggestionSubmit}
-                userHouse={userHouse}
-                onChangeColor={(color) => changeColorMutation.mutate({ color })}
-              />
+              <div className="absolute right-0 top-0 h-full">
+                <GovernanceSidebar
+                  laws={laws}
+                  canVote={hasHouse}
+                  canSuggest={hasHouse}
+                  totalHouses={houses.length}
+                  onVote={handleVote}
+                  onSuggestionSubmit={handleSuggestionSubmit}
+                  userHouse={userHouse}
+                  onChangeColor={(color) => changeColorMutation.mutate({ color })}
+                />
+              </div>
             </>
           )}
         </div>
