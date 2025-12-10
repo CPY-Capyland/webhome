@@ -26,7 +26,6 @@ const getVotingStatus = (law: Law, canVote: boolean) => {
   const now = new Date();
   const publishedAt = new Date(law.publishedAt);
   const votingStart = new Date(publishedAt.getTime() + VOTING_DELAY_MS);
-  const votingEndsAt = law.votingEndsAt ? new Date(law.votingEndsAt) : null;
   const userVotedAt = law.userVotedAt ? new Date(law.userVotedAt) : null;
 
   let statusText: string;
@@ -46,7 +45,7 @@ const getVotingStatus = (law: Law, canVote: boolean) => {
   } else if (now < votingStart) {
     statusText = "Proposition";
     statusColorClass = "bg-orange-500 text-white";
-  } else if (votingEndsAt && now < votingEndsAt) {
+  } else if (law.votingEndsAt && now < new Date(law.votingEndsAt)) {
     if (law.userVote && userVotedAt) {
       const voteChangeEnd = new Date(userVotedAt.getTime() + VOTE_CHANGE_WINDOW_MS);
       if (now < voteChangeEnd) {
@@ -123,7 +122,7 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3 w-3" />
           <span>Publiée le {publishedDate}</span>
-          {law.status === "active" && votingEndsAt && (
+          {law.status === "active" && law.votingEndsAt && (
             <span className="ml-2">
               • Vote se termine le {votingEndsDate}
             </span>
