@@ -7,8 +7,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import HouseMenu from "./HouseMenu";
-
 const GRID_SIZE = 500;
 const BASE_CELL_SIZE = 16;
 const MIN_ZOOM = 0.25;
@@ -28,10 +26,6 @@ interface GridCanvasProps {
   userHouse: House | null;
   canPlace: boolean;
   onCellClick: (x: number, y: number) => void;
-  onMoveHouse: () => void;
-  onAccessJobs: () => void;
-  onChangeColor: () => void;
-  onDeleteHouse: () => void;
 }
 
 export default function GridCanvas({
@@ -39,10 +33,6 @@ export default function GridCanvas({
   userHouse,
   canPlace,
   onCellClick,
-  onMoveHouse,
-  onAccessJobs,
-  onChangeColor,
-  onDeleteHouse,
 }: GridCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -52,8 +42,6 @@ export default function GridCanvas({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
   const pinchStartDistanceRef = useRef<number | null>(null);
-  const [contextMenuOpen, setContextMenuOpen] = useState(false);
-  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
 
   const cellSize = BASE_CELL_SIZE * zoom;
 
@@ -250,13 +238,6 @@ export default function GridCanvas({
     const gridX = Math.floor((mouseX - offset.x) / cellSize);
     const gridY = Math.floor((mouseY - offset.y) / cellSize);
 
-    const house = housesMap.get(`${gridX},${gridY}`);
-    if (house && house.isCurrentUser) {
-      setContextMenuPosition({ x: e.clientX, y: e.clientY });
-      setContextMenuOpen(true);
-      return;
-    }
-
     if (
       gridX >= 0 &&
       gridX < GRID_SIZE &&
@@ -312,33 +293,23 @@ export default function GridCanvas({
       className="relative flex-1 bg-background overflow-hidden touch-none"
       data-testid="grid-container"
     >
-      <HouseMenu
-        open={contextMenuOpen}
-        onOpenChange={setContextMenuOpen}
-        position={contextMenuPosition}
-        onMove={onMoveHouse}
-        onJobs={onAccessJobs}
-        onChangeColor={onChangeColor}
-        onDelete={onDeleteHouse}
-      >
-        <canvas
-          ref={canvasRef}
-          className="cursor-grab active:cursor-grabbing w-full h-full"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={() => {
-            handleMouseUp();
-            setHoveredCell(null);
-          }}
-          onClick={handleClick}
-          onWheel={handleWheel}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          data-testid="grid-canvas"
-        />
-      </HouseMenu>
+      <canvas
+        ref={canvasRef}
+        className="cursor-grab active:cursor-grabbing w-full h-full"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={() => {
+          handleMouseUp();
+          setHoveredCell(null);
+        }}
+        onClick={handleClick}
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        data-testid="grid-canvas"
+      />
 
       {hoveredCell && (
         <div

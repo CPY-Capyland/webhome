@@ -46,11 +46,6 @@ export default function Home() {
     queryKey: ["/api/laws"],
   });
 
-  // Fetch jobs
-  const { data: jobs = [] } = useQuery<any[]>({
-    queryKey: ["/api/jobs"],
-  });
-
   // Place/move house mutation
   const placeHouseMutation = useMutation({
     mutationFn: async ({ x, y }: { x: number; y: number }) => {
@@ -130,30 +125,6 @@ export default function Home() {
       toast({
         title: "Erreur",
         description: error.message || "Échec du changement de couleur",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Delete house mutation
-  const deleteHouseMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("DELETE", "/api/houses");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/houses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user/status"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/houses/mine"] });
-      toast({
-        title: "Maison supprimée",
-        description: "Votre maison a été supprimée.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Échec de la suppression de la maison",
         variant: "destructive",
       });
     },
@@ -250,24 +221,6 @@ export default function Home() {
     [user, suggestionMutation, toast]
   );
 
-  const onMoveHouse = () => {
-    setIsPlacementModalOpen(true);
-  };
-
-  const onAccessJobs = () => {
-    window.location.href = "/jobs";
-  };
-
-  const onChangeColor = () => {
-    // For now, the color picker is in the sidebar
-  };
-
-  const onDeleteHouse = () => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer votre maison ?")) {
-      deleteHouseMutation.mutate();
-    }
-  };
-
   return (
     <TooltipProvider>
       <div className="h-screen flex flex-col bg-background">
@@ -280,7 +233,7 @@ export default function Home() {
           showMenuButton={false} // No menu button in this new layout
         />
 
-        <div className="flex-1 relative">
+        <div className="flex-1 flex overflow-hidden">
           {isMobile ? (
             <MobileContainer
               user={user}
@@ -290,36 +243,30 @@ export default function Home() {
               onCellClick={handleCellClick}
               laws={laws}
               hasHouse={hasHouse}
-              canSuggest={canSuggest}
+              canSuggest={hasHouse}
               onVote={handleVote}
               onSuggestionSubmit={handleSuggestionSubmit}
             />
           ) : (
             <>
-              <div className="absolute inset-0">
+              <div className="flex-1 min-w-0">
                 <GridCanvas
                   houses={houses}
                   userHouse={userHouse}
                   canPlace={canPlace}
                   onCellClick={handleCellClick}
-                  onMoveHouse={onMoveHouse}
-                  onAccessJobs={onAccessJobs}
-                  onChangeColor={onChangeColor}
-                  onDeleteHouse={onDeleteHouse}
                 />
               </div>
-              <div className="absolute right-0 top-0 h-full">
-                <GovernanceSidebar
-                  laws={laws}
-                  canVote={hasHouse}
-                  canSuggest={hasHouse}
-                  totalHouses={houses.length}
-                  onVote={handleVote}
-                  onSuggestionSubmit={handleSuggestionSubmit}
-                  userHouse={userHouse}
-                  onChangeColor={(color) => changeColorMutation.mutate({ color })}
-                />
-              </div>
+              <GovernanceSidebar
+                laws={laws}
+                canVote={hasHouse}
+                canSuggest={hasHouse}
+                totalHouses={houses.length}
+                onVote={handleVote}
+                onSuggestionSubmit={handleSuggestionSubmit}
+                userHouse={userHouse}
+                onChangeColor={(color) => changeColorMutation.mutate({ color })}
+              />
             </>
           )}
         </div>
@@ -330,8 +277,6 @@ export default function Home() {
           coordinates={placementCoords}
           isMove={hasHouse}
           onConfirm={handleConfirmPlacement}
-          jobs={jobs}
-          user={user}
         />
       </div>
     </TooltipProvider>
