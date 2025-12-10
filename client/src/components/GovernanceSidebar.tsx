@@ -1,8 +1,10 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Users } from "lucide-react";
-import LawCard, { type Law } from "./LawCard";
+import { FileText, Users, Plus } from "lucide-react";
+import LawCard from "./LawCard";
 import SuggestionForm from "./SuggestionForm";
+import { Button } from "@/components/ui/button";
+import type { LawWithVotes as Law } from "@shared/schema";
 
 interface GovernanceSidebarProps {
   laws: Law[];
@@ -12,6 +14,7 @@ interface GovernanceSidebarProps {
   canSuggest?: boolean;
   onSuggestionSubmit?: (title: string, text: string) => void;
   isMobile?: boolean;
+  setMobileView?: (view: "grid" | "laws" | "propose" | "feed") => void;
 }
 
 export default function GovernanceSidebar({
@@ -22,11 +25,12 @@ export default function GovernanceSidebar({
   onVote,
   onSuggestionSubmit,
   isMobile,
+  setMobileView,
 }: GovernanceSidebarProps) {
   const activeLaws = laws.filter((l) => l.status === "active").length;
 
   return (
-    <div className={`${isMobile ? 'w-full' : 'w-80 border-l'} border-border bg-sidebar flex flex-col h-full`}>
+    <div className={`relative ${isMobile ? 'w-full' : 'w-80 border-l'} border-border bg-sidebar flex flex-col h-full`}>
       <div className="p-4 border-b border-sidebar-border">
         <h2 className="text-lg font-serif font-semibold">Gouvernance</h2>
         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
@@ -65,7 +69,7 @@ export default function GovernanceSidebar({
             </div>
           </div>
 
-          {onSuggestionSubmit && (
+          {!isMobile && onSuggestionSubmit && (
             <>
               <Separator />
               <div>
@@ -81,6 +85,14 @@ export default function GovernanceSidebar({
           )}
         </div>
       </ScrollArea>
+      {isMobile && canSuggest && setMobileView && (
+        <Button
+          className="absolute bottom-20 right-4 rounded-full h-16 w-16 shadow-lg"
+          onClick={() => setMobileView("propose")}
+        >
+          <Plus className="h-8 w-8" />
+        </Button>
+      )}
     </div>
   );
 }

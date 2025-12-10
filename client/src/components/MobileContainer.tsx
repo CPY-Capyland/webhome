@@ -3,7 +3,7 @@ import GridCanvas from "@/components/GridCanvas";
 import GovernanceSidebar from "@/components/GovernanceSidebar";
 import SuggestionForm from "@/components/SuggestionForm";
 import { Button } from "@/components/ui/button";
-import { Home, List, Plus, Bell } from "lucide-react";
+import { Home, List, Bell } from "lucide-react";
 import type { HouseWithUser, LawWithVotes, User } from "@shared/schema";
 
 type MobileView = "grid" | "laws" | "propose" | "feed";
@@ -16,6 +16,7 @@ interface MobileContainerProps {
   onCellClick: (x: number, y: number) => void;
   laws: LawWithVotes[];
   hasHouse: boolean;
+  canSuggest: boolean;
   onVote: (lawId: string, vote: "up" | "down" | null) => void;
   onSuggestionSubmit: (title: string, text: string) => void;
 }
@@ -28,6 +29,7 @@ export default function MobileContainer({
   onCellClick,
   laws,
   hasHouse,
+  canSuggest,
   onVote,
   onSuggestionSubmit,
 }: MobileContainerProps) {
@@ -49,9 +51,11 @@ export default function MobileContainer({
           <GovernanceSidebar
             laws={laws}
             canVote={hasHouse}
+            canSuggest={canSuggest}
             totalHouses={houses.length}
             onVote={onVote}
             isMobile
+            setMobileView={setMobileView}
           />
         );
       case "propose":
@@ -59,7 +63,10 @@ export default function MobileContainer({
           <div className="p-4 h-full overflow-y-auto">
             <SuggestionForm
               canSuggest={hasHouse}
-              onSuggestionSubmit={onSuggestionSubmit}
+              onSuggestionSubmit={(title, text) => {
+                onSuggestionSubmit(title, text);
+                setMobileView("laws");
+              }}
             />
           </div>
         );
@@ -92,10 +99,6 @@ export default function MobileContainer({
         <NavButton view="laws" current={mobileView}>
           <List />
           <span>Lois</span>
-        </NavButton>
-        <NavButton view="propose" current={mobileView}>
-          <Plus />
-          <span>Proposer</span>
         </NavButton>
         <NavButton view="feed" current={mobileView} disabled>
           <Bell />

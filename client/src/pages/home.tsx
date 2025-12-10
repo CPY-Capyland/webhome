@@ -216,6 +216,7 @@ export default function Home() {
               onCellClick={handleCellClick}
               laws={laws}
               hasHouse={hasHouse}
+              canSuggest={hasHouse}
               onVote={handleVote}
               onSuggestionSubmit={handleSuggestionSubmit}
             />
