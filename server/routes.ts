@@ -31,6 +31,13 @@ function canMoveHouse(lastMovedAt: Date): boolean {
   return now >= cooldownEnd;
 }
 
+function canChangeColor(lastColorChangedAt: Date): boolean {
+  const now = new Date();
+  const cooldownEnd = new Date(lastColorChangedAt.getTime() + 60 * 1000);
+  return now >= cooldownEnd;
+}
+
+
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated()) {
     return next();
@@ -123,6 +130,35 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Cet emplacement est déjà occupé" });
       }
       res.status(500).json({ error: "Échec du placement de la maison" });
+    }
+  });
+
+  // Change house color
+  app.post("/api/houses/color", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const { color } = req.body;
+
+      // Validate color
+      if (typeof color !== "string" || !/^#[0-9A-F]{6}$/i.test(color)) {
+        return res.status(400).json({ error: "Couleur invalide" });
+      }
+
+      const userHouse = await storage.getHouse(userId);
+
+      if (!userHouse) {
+        return res.status(404).json({ error: "Maison non trouvée" });
+      }
+
+      if (!canChangeColor(userHouse.lastColorChangedAt)) {
+        return res.status(400).json({ error: "Vous devez attendre avant de changer la couleur" });
+      }
+
+      const updatedHouse = await storage.updateHouseColor(userId, color);
+      res.json({ ...updatedHouse, isCurrentUser: true, canMove: canMoveHouse(updatedHouse.lastMovedAt) });
+    } catch (error) {
+      console.error("Error changing house color:", error);
+      res.status(500).json({ error: "Échec du changement de couleur de la maison" });
     }
   });
 

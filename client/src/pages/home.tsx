@@ -107,6 +107,29 @@ export default function Home() {
     },
   });
 
+  // Change house color mutation
+  const changeColorMutation = useMutation({
+    mutationFn: async ({ color }: { color: string }) => {
+      const res = await apiRequest("POST", "/api/houses/color", { color });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/houses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/houses/mine"] });
+      toast({
+        title: "Couleur de la maison modifiée",
+        description: "La couleur de votre maison a été mise à jour.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Échec du changement de couleur",
+        variant: "destructive",
+      });
+    },
+  });
+
   const hasHouse = userStatus?.hasHouse ?? false;
   const canPlace = !hasHouse || (userStatus?.house?.canMove ?? true);
   const userHouse = userStatus?.house && user ? { // Added '&& user'
@@ -235,6 +258,8 @@ export default function Home() {
                 totalHouses={houses.length}
                 onVote={handleVote}
                 onSuggestionSubmit={handleSuggestionSubmit}
+                userHouse={userHouse}
+                onChangeColor={(color) => changeColorMutation.mutate({ color })}
               />
             </>
           )}

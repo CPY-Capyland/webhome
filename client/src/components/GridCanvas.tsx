@@ -18,6 +18,7 @@ interface House {
   userId: string;
   isCurrentUser?: boolean;
   username: string;
+  color: string;
 }
 
 interface GridCanvasProps {
@@ -133,7 +134,7 @@ export default function GridCanvas({
           if (house.isCurrentUser) {
             ctx.fillStyle = isDark ? "hsl(217, 91%, 55%)" : "hsl(217, 91%, 45%)";
           } else {
-            ctx.fillStyle = isDark ? "hsl(210, 8%, 40%)" : "hsl(210, 8%, 50%)";
+            ctx.fillStyle = house.color;
           }
           ctx.beginPath();
           const cx = screenX + cellSize / 2;

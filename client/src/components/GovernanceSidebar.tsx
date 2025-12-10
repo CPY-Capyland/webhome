@@ -6,7 +6,7 @@ import LawCard from "./LawCard";
 import SuggestionForm from "./SuggestionForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { LawWithVotes as Law } from "@shared/schema";
+import type { LawWithVotes as Law, HouseWithUser } from "@shared/schema";
 
 interface GovernanceSidebarProps {
   laws: Law[];
@@ -17,6 +17,8 @@ interface GovernanceSidebarProps {
   onSuggestionSubmit?: (title: string, text: string) => void;
   isMobile?: boolean;
   setMobileView?: (view: "grid" | "laws" | "propose" | "feed") => void;
+  userHouse: HouseWithUser | null;
+  onChangeColor: (color: string) => void;
 }
 
 export default function GovernanceSidebar({
@@ -28,9 +30,12 @@ export default function GovernanceSidebar({
   onSuggestionSubmit,
   isMobile,
   setMobileView,
+  userHouse,
+  onChangeColor,
 }: GovernanceSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const activeLaws = laws.filter((l) => l.status === "active").length;
+  const [color, setColor] = useState(userHouse?.color || "#FF0000");
 
   const filteredLaws = laws.filter((law) =>
     law.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -99,6 +104,23 @@ export default function GovernanceSidebar({
                   canSuggest={canSuggest ?? false}
                   onSuggestionSubmit={onSuggestionSubmit}
                 />
+              </div>
+              <Separator />
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                  Maison
+                </h3>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="color"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    className="w-14 h-10"
+                  />
+                  <Button onClick={() => onChangeColor(color)} className="w-full">
+                    Changer la couleur
+                  </Button>
+                </div>
               </div>
             </>
           )}

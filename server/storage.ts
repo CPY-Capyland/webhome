@@ -23,6 +23,7 @@ export interface IStorage {
   getAllHouses(): Promise<HouseWithUser[]>;
   createHouse(userId: string, x: number, y: number): Promise<House>;
   moveHouse(userId: string, x: number, y: number): Promise<House>;
+  updateHouseColor(userId: string, color: string): Promise<House>;
   
   // Laws
   getLaw(id: string): Promise<Law | undefined>;
@@ -79,6 +80,8 @@ export class DatabaseStorage implements IStorage {
       y: houses.y,
       placedAt: houses.placedAt,
       lastMovedAt: houses.lastMovedAt,
+      lastColorChangedAt: houses.lastColorChangedAt,
+      color: houses.color,
       username: users.username,
     }).from(houses).leftJoin(users, eq(houses.userId, users.id));
     
@@ -119,6 +122,14 @@ export class DatabaseStorage implements IStorage {
       }
       throw error;
     }
+  }
+
+  async updateHouseColor(userId: string, color: string): Promise<House> {
+    const [house] = await db.update(houses)
+      .set({ color, lastColorChangedAt: new Date() })
+      .where(eq(houses.userId, userId))
+      .returning();
+    return house;
   }
 
   // Laws

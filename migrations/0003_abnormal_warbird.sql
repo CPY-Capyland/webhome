@@ -1,0 +1,3 @@
+ALTER TABLE "users" ALTER COLUMN "discord_id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "houses" ADD COLUMN "last_color_changed_at" timestamp DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "houses" ADD COLUMN "color" text DEFAULT '#FF0000' NOT NULL;

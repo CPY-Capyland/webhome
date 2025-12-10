@@ -21,6 +21,8 @@ export const houses = pgTable("houses", {
   y: integer("y").notNull(),
   placedAt: timestamp("placed_at").defaultNow().notNull(),
   lastMovedAt: timestamp("last_moved_at").defaultNow().notNull(),
+  lastColorChangedAt: timestamp("last_color_changed_at").defaultNow().notNull(),
+  color: text("color").default('#FF0000').notNull(),
 }, (table) => [
   uniqueIndex("houses_coordinates_idx").on(table.x, table.y),
 ]);
@@ -131,7 +133,9 @@ export type Suggestion = typeof suggestions.$inferSelect;
 // API response types
 export type HouseWithUser = House & { 
   isCurrentUser?: boolean;
-  username: string; 
+  username: string;
+  color: string;
+  lastColorChangedAt: Date;
 };
 export type LawWithVotes = Law & { 
   upvotes: number; 
