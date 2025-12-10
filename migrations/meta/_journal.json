@@ -29,6 +29,13 @@
       "when": 1765406702312,
       "tag": "0003_abnormal_warbird",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1765406998426,
+      "tag": "0004_yielding_klaw",
+      "breakpoints": true
     }
   ]
 }

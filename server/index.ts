@@ -5,6 +5,7 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { pool } from "./db";
 import connectPgSimple from "connect-pg-simple";
+import { startSalaryCron } from "./cron";
 
 const app = express();
 const httpServer = createServer(app);
@@ -120,6 +121,8 @@ app.use((req, res, next) => {
 
 (async () => {
   await registerRoutes(httpServer, app);
+
+  startSalaryCron();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     // This is the fixed error handler.

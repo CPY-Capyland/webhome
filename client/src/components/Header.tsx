@@ -1,4 +1,4 @@
-import { Home, Grid3X3, Moon, Sun, LogIn, LogOut, Menu, Github } from "lucide-react";
+import { Home, Grid3X3, Moon, Sun, LogIn, LogOut, Menu, Github, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import CooldownTimer from "./CooldownTimer";
@@ -99,6 +99,16 @@ export default function Header({
         >
           <a href="https://github.com/CPY-Capyland/webhome" target="_blank">
             <Github className="h-4 w-4" />
+          </a>
+        </Button>
+
+        <Button
+          size="icon"
+          variant="ghost"
+          asChild
+        >
+          <a href="/jobs">
+            <Briefcase className="h-4 w-4" />
           </a>
         </Button>
 

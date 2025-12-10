@@ -1,5 +1,5 @@
 import { 
-  users, houses, laws, votes, suggestions,
+  users, houses, laws, votes, suggestions, jobs,
   type User, type InsertUser,
   type House, type InsertHouse,
   type Law, type InsertLaw,
@@ -40,6 +40,12 @@ export interface IStorage {
   // Suggestions
   createSuggestion(userId: string, title: string, text: string): Promise<Suggestion>;
   getAllSuggestions(): Promise<Suggestion[]>;
+
+  // Jobs
+  getAllJobs(): Promise<any[]>;
+  updateUserJob(userId: string, jobId: string): Promise<User>;
+  getUsersWithJobs(): Promise<any[]>;
+  updateUserLastPaidAt(userId: string): Promise<User>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -301,6 +307,34 @@ export class DatabaseStorage implements IStorage {
 
   async getAllSuggestions(): Promise<Suggestion[]> {
     return db.select().from(suggestions);
+  }
+
+  // Jobs
+  async getAllJobs(): Promise<any[]> {
+    return db.select().from(jobs);
+  }
+
+  async updateUserJob(userId: string, jobId: string): Promise<User> {
+    const [user] = await db.update(users)
+      .set({ jobId })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async getUsersWithJobs(): Promise<any[]> {
+    return db.select({
+      user: users,
+      job: jobs,
+    }).from(users).innerJoin(jobs, eq(users.jobId, jobs.id));
+  }
+
+  async updateUserLastPaidAt(userId: string): Promise<User> {
+    const [user] = await db.update(users)
+      .set({ lastPaidAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
   }
 }
 

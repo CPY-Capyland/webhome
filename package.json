@@ -9,6 +9,7 @@
     "start": "npm run postbuild && NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:generate": "drizzle-kit generate",
+    "db:seed-jobs": "tsx script/seed-jobs.ts",
     "postbuild": "tsx script/run-patch-migrations.ts",
     "clear-laws": "tsx script/clear-laws.ts"
   },

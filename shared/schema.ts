@@ -11,6 +11,16 @@ export const users = pgTable("users", {
   username: text("username").notNull(), // notNull()
   avatar: text("avatar"), // nullable
   createdAt: timestamp("created_at").defaultNow().notNull(), // defaultNow().notNull()
+  jobId: varchar("job_id", { length: 36 }).references(() => jobs.id),
+  lastPaidAt: timestamp("last_paid_at"),
+});
+
+// Jobs table
+export const jobs = pgTable("jobs", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  name: text("name").notNull(),
+  grossSalary: integer("gross_salary").notNull(),
+  fees: integer("fees").notNull(),
 });
 
 // Houses table - one per user on the 500x500 grid
