@@ -89,7 +89,7 @@ export default function MobileContainer({
   );
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full w-full flex flex-col">
       <div className="flex-1 overflow-hidden">{renderContent()}</div>
       <div className="flex justify-around p-2 border-t bg-background">
         <NavButton view="grid" current={mobileView}>
@@ -99,6 +99,10 @@ export default function MobileContainer({
         <NavButton view="laws" current={mobileView}>
           <List />
           <span>Lois</span>
+        </NavButton>
+        <NavButton view="feed" current={mobileView} disabled>
+          <Bell />
+          <span>Nouveautés</span>
         </NavButton>
         <NavButton view="feed" current={mobileView} disabled>
           <Bell />
