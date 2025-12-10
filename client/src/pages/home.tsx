@@ -42,7 +42,7 @@ export default function Home() {
   });
 
   // Fetch laws
-  const { data: laws = [] } = useQuery<Law[]>({ // Changed LawWithVotes[] to Law[]
+  const { data: laws = [] } = useQuery<Law[]>({
     queryKey: ["/api/laws"],
   });
 
@@ -132,12 +132,16 @@ export default function Home() {
 
   const hasHouse = userStatus?.hasHouse ?? false;
   const canPlace = !hasHouse || (userStatus?.house?.canMove ?? true);
-  const userHouse = userStatus?.house && user ? { // Added '&& user'
-    x: userStatus.house.x,
-    y: userStatus.house.y,
-    userId: user.id, // Changed from user?.id || "current-user"
-    username: user.username, // Added username
+  const userHouse: HouseWithUser | null = userStatus?.house && user ? {
+    id: "", // This is not available here, but it's not used in the GridCanvas
+    ...userStatus.house,
+    userId: user.id,
+    username: user.username,
     isCurrentUser: true,
+    color: "", // This is not available here, but it's not used for the current user's house
+    lastColorChangedAt: new Date(), // This is not available here
+    placedAt: new Date(), // This is not available here
+    lastMovedAt: new Date(userStatus.house.lastMovedAt),
   } : null;
   const lastMoveTime = userStatus?.house?.lastMovedAt ? new Date(userStatus.house.lastMovedAt) : null;
 

@@ -75,13 +75,9 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
   const [currentVote, setCurrentVote] = useState<"up" | "down" | null>(
     law.userVote || null
   );
-  const [votesCount, setVotesCount] = useState({
-    up: law.upvotes,
-    down: law.downvotes,
-  });
   const [localUserVotedAt, setLocalUserVotedAt] = useState<Date | undefined>(law.userVotedAt);
 
-  const totalVoters = votesCount.up + votesCount.down;
+  const totalVoters = law.upvotes + law.downvotes;
   const isVotable = canVote && canUserVote && (law.isVotable !== false);
   const { statusText, statusColorClass, canChangeVote, timeLeftToChangeVote } = useMemo(
     () => getVotingStatus(law, isVotable),
@@ -101,23 +97,9 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
   const handleVote = (vote: "up" | "down") => {
     if (!isVotable && !canChangeVote) return;
 
-    let newVote: "up" | "down" | null;
-    const newVotes = { ...votesCount };
-
-    if (currentVote === vote) {
-      newVote = null;
-      if (vote === "up") newVotes.up--;
-      else newVotes.down--;
-    } else {
-      newVote = vote;
-      if (currentVote === "up") newVotes.up--;
-      if (currentVote === "down") newVotes.down--;
-      if (vote === "up") newVotes.up++;
-      else newVotes.down++;
-    }
-
+    let newVote: "up" | "down" | null = currentVote === vote ? null : vote;
+    
     setCurrentVote(newVote);
-    setVotesCount(newVotes);
     setLocalUserVotedAt(new Date()); // Update local voted at timestamp
     onVote(law.id, newVote);
   };
@@ -165,7 +147,7 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
               data-testid={`button-upvote-${law.id}`}
             >
               <ThumbsUp className="h-3.5 w-3.5" />
-              <span>{votesCount.up}</span>
+              <span>{law.upvotes}</span>
             </Button>
 
             <Button
@@ -177,7 +159,7 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
               data-testid={`button-downvote-${law.id}`}
             >
               <ThumbsDown className="h-3.5 w-3.5" />
-              <span>{votesCount.down}</span>
+              <span>{law.downvotes}</span>
             </Button>
           </div>
           <div className="text-sm text-muted-foreground">
@@ -230,7 +212,7 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
                       data-testid={`button-modal-upvote-${law.id}`}
                     >
                       <ThumbsUp className="h-4 w-4" />
-                      <span>Pour ({votesCount.up})</span>
+                      <span>Pour ({law.upvotes})</span>
                     </Button>
 
                     <Button
@@ -243,7 +225,7 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
                       data-testid={`button-modal-downvote-${law.id}`}
                     >
                       <ThumbsDown className="h-4 w-4" />
-                      <span>Contre ({votesCount.down})</span>
+                      <span>Contre ({law.downvotes})</span>
                     </Button>
                   </div>
 

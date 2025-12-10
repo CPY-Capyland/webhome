@@ -194,6 +194,10 @@ export class DatabaseStorage implements IStorage {
     }
     
     const lawsWithVotes = allLaws.map(law => {
+      const lawVotes = allVotes.filter(v => v.lawId === law.id);
+      const upvotes = lawVotes.filter(v => v.vote === "up").length;
+      const downvotes = lawVotes.filter(v => v.vote === "down").length;
+
       const userVoteObject = userId 
         ? lawVotes.find(v => v.userId === userId)
         : null;
