@@ -46,6 +46,11 @@ export default function Home() {
     queryKey: ["/api/laws"],
   });
 
+  // Fetch jobs
+  const { data: jobs = [] } = useQuery<any[]>({
+    queryKey: ["/api/jobs"],
+  });
+
   // Place/move house mutation
   const placeHouseMutation = useMutation({
     mutationFn: async ({ x, y }: { x: number; y: number }) => {
@@ -125,6 +130,30 @@ export default function Home() {
       toast({
         title: "Erreur",
         description: error.message || "Échec du changement de couleur",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete house mutation
+  const deleteHouseMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("DELETE", "/api/houses");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/houses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/houses/mine"] });
+      toast({
+        title: "Maison supprimée",
+        description: "Votre maison a été supprimée.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Échec de la suppression de la maison",
         variant: "destructive",
       });
     },
@@ -235,7 +264,7 @@ export default function Home() {
 
   const onDeleteHouse = () => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer votre maison ?")) {
-      // deleteHouseMutation.mutate();
+      deleteHouseMutation.mutate();
     }
   };
 
@@ -267,7 +296,7 @@ export default function Home() {
             />
           ) : (
             <>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0" style={{ height: "calc(100vh - 4rem)" }}>
                 <GridCanvas
                   houses={houses}
                   userHouse={userHouse}
@@ -299,6 +328,8 @@ export default function Home() {
           coordinates={placementCoords}
           isMove={hasHouse}
           onConfirm={handleConfirmPlacement}
+          jobs={jobs}
+          user={user}
         />
       </div>
     </TooltipProvider>
