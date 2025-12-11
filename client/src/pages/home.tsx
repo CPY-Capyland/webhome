@@ -221,6 +221,24 @@ export default function Home() {
     [user, suggestionMutation, toast]
   );
 
+  const onMoveHouse = () => {
+    setIsPlacementModalOpen(true);
+  };
+
+  const onAccessJobs = () => {
+    window.location.href = "/jobs";
+  };
+
+  const onChangeColor = () => {
+    // For now, the color picker is in the sidebar
+  };
+
+  const onDeleteHouse = () => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer votre maison ?")) {
+      // deleteHouseMutation.mutate();
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="h-screen flex flex-col bg-background">
@@ -243,7 +261,7 @@ export default function Home() {
               onCellClick={handleCellClick}
               laws={laws}
               hasHouse={hasHouse}
-              canSuggest={hasHouse}
+              canSuggest={canSuggest}
               onVote={handleVote}
               onSuggestionSubmit={handleSuggestionSubmit}
             />
@@ -286,5 +304,3 @@ export default function Home() {
     </TooltipProvider>
   );
 }
-
-
