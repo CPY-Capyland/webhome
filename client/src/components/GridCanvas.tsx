@@ -7,6 +7,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResizeObserver } from "@/hooks/use-resize-observer";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 
 const GRID_SIZE = 500;
@@ -51,6 +56,7 @@ export default function GridCanvas({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
+  const [houseMenu, setHouseMenu] = useState<{ x: number, y: number } | null>(null);
   const pinchStartDistanceRef = useRef<number | null>(null);
 
   const cellSize = BASE_CELL_SIZE * zoom;
@@ -240,6 +246,7 @@ export default function GridCanvas({
 
     const house = housesMap.get(`${gridX},${gridY}`);
     if (house && house.isCurrentUser) {
+      setHouseMenu({ x: e.clientX, y: e.clientY });
       return;
     }
 
@@ -298,8 +305,8 @@ export default function GridCanvas({
       className="relative flex-1 bg-background overflow-hidden touch-none"
       data-testid="grid-container"
     >
-      <ContextMenu>
-        <ContextMenuTrigger>
+      <Popover open={!!houseMenu} onOpenChange={(isOpen) => !isOpen && setHouseMenu(null)}>
+        <PopoverTrigger asChild>
           <canvas
             ref={canvasRef}
             className="cursor-grab active:cursor-grabbing w-full h-full"
@@ -317,14 +324,31 @@ export default function GridCanvas({
             onTouchEnd={handleTouchEnd}
             data-testid="grid-canvas"
           />
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          <ContextMenuItem onClick={onMoveHouse}>Déménager</ContextMenuItem>
-          <ContextMenuItem onClick={onAccessJobs}>Métiers</ContextMenuItem>
-          <ContextMenuItem onClick={onChangeColor}>Changer la couleur</ContextMenuItem>
-          <ContextMenuItem onClick={onDeleteHouse}>Supprimer la maison</ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
+        </PopoverTrigger>
+        <PopoverContent 
+          className="w-48"
+          style={{
+            position: 'fixed',
+            left: houseMenu?.x,
+            top: houseMenu?.y
+          }}
+        >
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <h4 className="font-medium leading-none">Maison</h4>
+              <p className="text-sm text-muted-foreground">
+                Gérez votre maison.
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <Button variant="outline" size="sm" onClick={() => { onMoveHouse(); setHouseMenu(null); }}>Déménager</Button>
+              <Button variant="outline" size="sm" onClick={() => { onAccessJobs(); setHouseMenu(null); }}>Métiers</Button>
+              <Button variant="outline" size="sm" onClick={() => { onChangeColor(); setHouseMenu(null); }}>Changer la couleur</Button>
+              <Button variant="destructive" size="sm" onClick={() => { onDeleteHouse(); setHouseMenu(null); }}>Supprimer la maison</Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
 
       {hoveredCell && (
         <div
