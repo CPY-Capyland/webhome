@@ -6,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useResizeObserver } from "@/hooks/use-resize-observer";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 
 const GRID_SIZE = 500;
@@ -43,8 +44,8 @@ export default function GridCanvas({
   onChangeColor,
   onDeleteHouse,
 }: GridCanvasProps) {
+  const { ref: containerRef, entry: containerEntry } = useResizeObserver<HTMLDivElement>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -180,18 +181,12 @@ export default function GridCanvas({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
+    if (!canvas || !containerEntry) return;
 
-    const resizeObserver = new ResizeObserver(() => {
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
-      drawGrid();
-    });
-
-    resizeObserver.observe(container);
-    return () => resizeObserver.disconnect();
-  }, [drawGrid]);
+    canvas.width = containerEntry.contentRect.width;
+    canvas.height = containerEntry.contentRect.height;
+    drawGrid();
+  }, [containerEntry, drawGrid]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button === 0) {
@@ -245,7 +240,6 @@ export default function GridCanvas({
 
     const house = housesMap.get(`${gridX},${gridY}`);
     if (house && house.isCurrentUser) {
-      // The context menu will be triggered by the onContextMenu event
       return;
     }
 
@@ -308,7 +302,7 @@ export default function GridCanvas({
         <ContextMenuTrigger>
           <canvas
             ref={canvasRef}
-            className="cursor-grab active:cursor-grabbing"
+            className="cursor-grab active:cursor-grabbing w-full h-full"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
