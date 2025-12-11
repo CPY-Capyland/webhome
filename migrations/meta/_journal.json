@@ -36,6 +36,13 @@
       "when": 1765406998426,
       "tag": "0004_yielding_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1765413210182,
+      "tag": "0005_late_onslaught",
+      "breakpoints": true
     }
   ]
 }

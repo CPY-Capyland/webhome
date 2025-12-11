@@ -266,7 +266,7 @@ export async function registerRoutes(
         status: 'active',
       };
 
-      await storage.createLaw(newLaw);
+      await storage.createLaw(newLaw, userId);
 
       res.json(suggestion);
     } catch (error) {

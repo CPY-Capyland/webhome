@@ -7,8 +7,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResizeObserver } from "@/hooks/use-resize-observer";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ContextMenuItem } from "@/components/ui/context-menu";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 
 const GRID_SIZE = 500;
 const BASE_CELL_SIZE = 16;
@@ -53,8 +52,6 @@ export default function GridCanvas({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
   const pinchStartDistanceRef = useRef<number | null>(null);
-  const [contextMenuOpen, setContextMenuOpen] = useState(false);
-  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
 
   const cellSize = BASE_CELL_SIZE * zoom;
 
@@ -243,8 +240,7 @@ export default function GridCanvas({
 
     const house = housesMap.get(`${gridX},${gridY}`);
     if (house && house.isCurrentUser) {
-      setContextMenuPosition({ x: e.clientX, y: e.clientY });
-      setContextMenuOpen(true);
+      // The context menu will be triggered by the onContextMenu event
       return;
     }
 
@@ -303,40 +299,33 @@ export default function GridCanvas({
       className="relative flex-1 bg-background overflow-hidden touch-none h-full"
       data-testid="grid-container"
     >
-      <Popover open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
-        <PopoverTrigger asChild>
-          <div
-            style={{
-              position: "absolute",
-              left: contextMenuPosition.x,
-              top: contextMenuPosition.y,
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <canvas
+            ref={canvasRef}
+            className="cursor-grab active:cursor-grabbing"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={() => {
+              handleMouseUp();
+              setHoveredCell(null);
             }}
+            onClick={handleClick}
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            data-testid="grid-canvas"
           />
-        </PopoverTrigger>
-        <PopoverContent>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
           <ContextMenuItem onClick={onMoveHouse}>Déménager</ContextMenuItem>
           <ContextMenuItem onClick={onAccessJobs}>Métiers</ContextMenuItem>
           <ContextMenuItem onClick={onChangeColor}>Changer la couleur</ContextMenuItem>
           <ContextMenuItem onClick={onDeleteHouse}>Supprimer la maison</ContextMenuItem>
-        </PopoverContent>
-      </Popover>
-      <canvas
-        ref={canvasRef}
-        className="cursor-grab active:cursor-grabbing"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={() => {
-          handleMouseUp();
-          setHoveredCell(null);
-        }}
-        onClick={handleClick}
-        onWheel={handleWheel}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        data-testid="grid-canvas"
-      />
+        </ContextMenuContent>
+      </ContextMenu>
 
       {hoveredCell && (
         <div

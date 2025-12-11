@@ -121,7 +121,7 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3 w-3" />
-          <span>Publiée le {publishedDate}</span>
+          <span>Publiée le {publishedDate} par {law.publisherName}</span>
           {law.status === "active" && law.votingEndsAt && (
             <span className="ml-2">
               • Vote se termine le {votingEndsDate}

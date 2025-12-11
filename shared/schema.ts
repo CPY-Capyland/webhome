@@ -40,6 +40,7 @@ export const houses = pgTable("houses", {
 // Laws table - published by government
 export const laws = pgTable("laws", {
   id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).references(() => users.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
   fullText: text("full_text").notNull(),
@@ -155,4 +156,5 @@ export type LawWithVotes = Law & {
   isVotable?: boolean;
   votingEndsAt?: Date;
   isInTiebreak?: boolean;
+  publisherName?: string;
 };

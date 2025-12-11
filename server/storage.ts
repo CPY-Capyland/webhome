@@ -29,7 +29,7 @@ export interface IStorage {
   getLaw(id: string): Promise<Law | undefined>;
   getAllLaws(): Promise<Law[]>;
   getLawsWithVotes(userId?: string): Promise<LawWithVotes[]>;
-  createLaw(law: InsertLaw): Promise<Law>;
+  createLaw(law: InsertLaw, userId: string): Promise<Law>;
   closeLawVoting(id: string): Promise<void>;
   
   // Votes
@@ -152,10 +152,14 @@ export class DatabaseStorage implements IStorage {
     const VOTING_DELAY_MS = 24 * 60 * 60 * 1000;
     const VOTING_DURATION_MS = 168 * 60 * 60 * 1000;
     
-    const allLaws = await db.select().from(laws);
+    const allLaws = await db.select({
+      law: laws,
+      publisher: users,
+    }).from(laws).leftJoin(users, eq(laws.userId, users.id));
+
     const allVotes = await db.select().from(votes);
 
-    for (const law of allLaws) {
+    for (const { law, publisher } of allLaws) {
       if (law.status === "active" && !law.votingClosedAt) {
         const votingStart = new Date(law.publishedAt.getTime() + VOTING_DELAY_MS);
         const votingEnd = new Date(votingStart.getTime() + VOTING_DURATION_MS);
@@ -193,39 +197,42 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    const lawsWithVotes = allLaws.map(law => {
-      const lawVotes = allVotes.filter(v => v.lawId === law.id);
-      const upvotes = lawVotes.filter(v => v.vote === "up").length;
-      const downvotes = lawVotes.filter(v => v.vote === "down").length;
+    const lawsWithVotes = allLaws
+      .filter(({ law }) => law.userId)
+      .map(({ law, publisher }) => {
+        const lawVotes = allVotes.filter(v => v.lawId === law.id);
+        const upvotes = lawVotes.filter(v => v.vote === "up").length;
+        const downvotes = lawVotes.filter(v => v.vote === "down").length;
 
-      const userVoteObject = userId 
-        ? lawVotes.find(v => v.userId === userId)
-        : null;
-      const userVote = userVoteObject?.vote || null;
-      const userVotedAt = userVoteObject?.votedAt || undefined;
-      
-      let isVotable = false;
-      let votingEndsAt: Date | undefined;
+        const userVoteObject = userId 
+          ? lawVotes.find(v => v.userId === userId)
+          : null;
+        const userVote = userVoteObject?.vote || null;
+        const userVotedAt = userVoteObject?.votedAt || undefined;
+        
+        let isVotable = false;
+        let votingEndsAt: Date | undefined;
 
-      if (law.isInTiebreak) {
-        isVotable = true;
-      } else if (law.status === "active" && !law.votingClosedAt) {
-          const votingStart = new Date(law.publishedAt.getTime() + VOTING_DELAY_MS);
-          votingEndsAt = new Date(votingStart.getTime() + VOTING_DURATION_MS);
-          const now = new Date();
-          isVotable = now >= votingStart && now < votingEndsAt;
-      }
-      
-      return {
-        ...law,
-        upvotes,
-        downvotes,
-        userVote,
-        userVotedAt,
-        isVotable,
-        votingEndsAt,
-      };
-    });
+        if (law.isInTiebreak) {
+          isVotable = true;
+        } else if (law.status === "active" && !law.votingClosedAt) {
+            const votingStart = new Date(law.publishedAt.getTime() + VOTING_DELAY_MS);
+            votingEndsAt = new Date(votingStart.getTime() + VOTING_DURATION_MS);
+            const now = new Date();
+            isVotable = now >= votingStart && now < votingEndsAt;
+        }
+        
+        return {
+          ...law,
+          upvotes,
+          downvotes,
+          userVote,
+          userVotedAt,
+          isVotable,
+          votingEndsAt,
+          publisherName: publisher?.username,
+        };
+      });
 
     lawsWithVotes.sort((a, b) => {
       if (a.status === 'pending' && b.status !== 'pending') return -1;
@@ -236,8 +243,8 @@ export class DatabaseStorage implements IStorage {
     return lawsWithVotes;
   }
 
-  async createLaw(law: InsertLaw): Promise<Law> {
-    const [newLaw] = await db.insert(laws).values(law).returning();
+  async createLaw(law: InsertLaw, userId: string): Promise<Law> {
+    const [newLaw] = await db.insert(laws).values({ ...law, userId }).returning();
     return newLaw;
   }
 
