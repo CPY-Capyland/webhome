@@ -280,7 +280,7 @@ export default function Home() {
           showMenuButton={false} // No menu button in this new layout
         />
 
-        <div className="flex-1 relative">
+        <div className="flex-1 flex flex-row">
           {isMobile ? (
             <MobileContainer
               user={user}
@@ -296,7 +296,7 @@ export default function Home() {
             />
           ) : (
             <>
-              <div className="absolute inset-0">
+              <div className="flex-1">
                 <GridCanvas
                   houses={houses}
                   userHouse={userHouse}
@@ -308,7 +308,7 @@ export default function Home() {
                   onDeleteHouse={onDeleteHouse}
                 />
               </div>
-              <div className="absolute right-0 top-0 h-full">
+              <div>
                 <GovernanceSidebar
                   laws={laws}
                   canVote={hasHouse}
