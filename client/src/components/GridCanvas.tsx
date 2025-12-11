@@ -6,7 +6,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResizeObserver } from "@/hooks/use-resize-observer";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 
 const GRID_SIZE = 500;
@@ -44,8 +43,8 @@ export default function GridCanvas({
   onChangeColor,
   onDeleteHouse,
 }: GridCanvasProps) {
-  const { ref: containerRef, entry: containerEntry } = useResizeObserver<HTMLDivElement>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -181,12 +180,18 @@ export default function GridCanvas({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !containerEntry) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
 
-    canvas.width = containerEntry.contentRect.width;
-    canvas.height = containerEntry.contentRect.height;
-    drawGrid();
-  }, [containerEntry, drawGrid]);
+    const resizeObserver = new ResizeObserver(() => {
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      drawGrid();
+    });
+
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, [drawGrid]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button === 0) {
@@ -296,7 +301,7 @@ export default function GridCanvas({
   return (
     <div
       ref={containerRef}
-      className="relative flex-1 bg-background overflow-hidden touch-none h-full"
+      className="relative flex-1 bg-background overflow-hidden touch-none"
       data-testid="grid-container"
     >
       <ContextMenu>
