@@ -7,6 +7,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResizeObserver } from "@/hooks/use-resize-observer";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ContextMenuItem } from "@/components/ui/context-menu";
 
 const GRID_SIZE = 500;
 const BASE_CELL_SIZE = 16;
@@ -27,6 +29,10 @@ interface GridCanvasProps {
   userHouse: House | null;
   canPlace: boolean;
   onCellClick: (x: number, y: number) => void;
+  onMoveHouse: () => void;
+  onAccessJobs: () => void;
+  onChangeColor: () => void;
+  onDeleteHouse: () => void;
 }
 
 export default function GridCanvas({
@@ -34,6 +40,10 @@ export default function GridCanvas({
   userHouse,
   canPlace,
   onCellClick,
+  onMoveHouse,
+  onAccessJobs,
+  onChangeColor,
+  onDeleteHouse,
 }: GridCanvasProps) {
   const { ref: containerRef, entry: containerEntry } = useResizeObserver<HTMLDivElement>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -43,14 +53,16 @@ export default function GridCanvas({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
   const pinchStartDistanceRef = useRef<number | null>(null);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
 
   const cellSize = BASE_CELL_SIZE * zoom;
 
   const housesMap = new Map(houses.map((h) => [`${h.x},${h.y}`, h]));
-  
+
   const getTouchPosition = (e: React.TouchEvent) => {
     const canvas = canvasRef.current;
-    if (!canvas) return {x: 0, y: 0};
+    if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
     return {
       x: e.touches[0].clientX - rect.left,
@@ -78,20 +90,20 @@ export default function GridCanvas({
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const newDistance = Math.sqrt(dx * dx + dy * dy);
       const scale = newDistance / pinchStartDistanceRef.current;
-      
+
       const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * scale));
 
       if (newZoom !== zoom) {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
-        
+
         const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
         const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
 
         const newOffsetX = midX - (midX - offset.x) * (newZoom / zoom);
         const newOffsetY = midY - (midY - offset.y) * (newZoom / zoom);
-        
+
         setZoom(newZoom);
         setOffset({ x: newOffsetX, y: newOffsetY });
         pinchStartDistanceRef.current = newDistance;
@@ -110,7 +122,7 @@ export default function GridCanvas({
     pinchStartDistanceRef.current = null;
     setIsDragging(false);
   };
-  
+
   const drawGrid = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
@@ -229,6 +241,13 @@ export default function GridCanvas({
     const gridX = Math.floor((mouseX - offset.x) / cellSize);
     const gridY = Math.floor((mouseY - offset.y) / cellSize);
 
+    const house = housesMap.get(`${gridX},${gridY}`);
+    if (house && house.isCurrentUser) {
+      setContextMenuPosition({ x: e.clientX, y: e.clientY });
+      setContextMenuOpen(true);
+      return;
+    }
+
     if (
       gridX >= 0 &&
       gridX < GRID_SIZE &&
@@ -284,6 +303,23 @@ export default function GridCanvas({
       className="relative flex-1 bg-background overflow-hidden touch-none h-full"
       data-testid="grid-container"
     >
+      <Popover open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
+        <PopoverTrigger asChild>
+          <div
+            style={{
+              position: "absolute",
+              left: contextMenuPosition.x,
+              top: contextMenuPosition.y,
+            }}
+          />
+        </PopoverTrigger>
+        <PopoverContent>
+          <ContextMenuItem onClick={onMoveHouse}>Déménager</ContextMenuItem>
+          <ContextMenuItem onClick={onAccessJobs}>Métiers</ContextMenuItem>
+          <ContextMenuItem onClick={onChangeColor}>Changer la couleur</ContextMenuItem>
+          <ContextMenuItem onClick={onDeleteHouse}>Supprimer la maison</ContextMenuItem>
+        </PopoverContent>
+      </Popover>
       <canvas
         ref={canvasRef}
         className="cursor-grab active:cursor-grabbing"

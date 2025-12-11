@@ -255,6 +255,10 @@ export default function Home() {
                   userHouse={userHouse}
                   canPlace={canPlace}
                   onCellClick={handleCellClick}
+                  onMoveHouse={onMoveHouse}
+                  onAccessJobs={onAccessJobs}
+                  onChangeColor={onChangeColor}
+                  onDeleteHouse={onDeleteHouse}
                 />
               </div>
               <GovernanceSidebar
