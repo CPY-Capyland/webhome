@@ -264,7 +264,7 @@ export default function GridCanvas({
     }
   };
 
-  const handleZoom = (delta: number, mouseX: number, mouseY: number) => {
+  const handleZoom = useCallback((delta: number, mouseX: number, mouseY: number) => {
     const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * delta));
     if (newZoom !== zoom) {
       const newOffsetX = mouseX - (mouseX - offset.x) * (newZoom / zoom);
@@ -272,17 +272,25 @@ export default function GridCanvas({
       setZoom(newZoom);
       setOffset({ x: newOffsetX, y: newOffsetY });
     }
-  }
+  }, [zoom, offset]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 1 / 1.1 : 1.1;
+      const rect = canvas.getBoundingClientRect();
+      handleZoom(delta, e.clientX - rect.left, e.clientY - rect.top);
+    };
+
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleWheel);
+  }, [handleZoom]);
 
   const handleZoomIn = () => handleZoom(1.5, canvasRef.current!.width / 2, canvasRef.current!.height / 2);
   const handleZoomOut = () => handleZoom(1 / 1.5, canvasRef.current!.width / 2, canvasRef.current!.height / 2);
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 1 / 1.1 : 1.1;
-    const rect = canvasRef.current!.getBoundingClientRect();
-    handleZoom(delta, e.clientX - rect.left, e.clientY - rect.top);
-  };
 
   const handleReset = () => {
     setZoom(1);
@@ -318,7 +326,6 @@ export default function GridCanvas({
               setHoveredCell(null);
             }}
             onClick={handleClick}
-            onWheel={handleWheel}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
