@@ -105,8 +105,6 @@ export default function GovernanceSidebar({
                   onSuggestionSubmit={onSuggestionSubmit}
                 />
               </div>
-              <Separator />
-              </div>
             </>
           )}
         </div>
