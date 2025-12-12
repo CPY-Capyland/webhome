@@ -8,10 +8,12 @@ import {
 } from "@/components/ui/tooltip";
 import { useResizeObserver } from "@/hooks/use-resize-observer";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 
 const GRID_SIZE = 500;
@@ -35,7 +37,7 @@ interface GridCanvasProps {
   onCellClick: (x: number, y: number) => void;
   onMoveHouse: () => void;
   onAccessJobs: () => void;
-  onChangeColor: () => void;
+  onChangeColor: (color: string) => void;
   onDeleteHouse: () => void;
 }
 
@@ -56,7 +58,7 @@ export default function GridCanvas({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
-  const [houseMenu, setHouseMenu] = useState<{ x: number, y: number } | null>(null);
+  const [isHouseMenuOpen, setIsHouseMenuOpen] = useState(false);
   const pinchStartDistanceRef = useRef<number | null>(null);
 
   const cellSize = BASE_CELL_SIZE * zoom;
@@ -246,7 +248,7 @@ export default function GridCanvas({
 
     const house = housesMap.get(`${gridX},${gridY}`);
     if (house && house.isCurrentUser) {
-      setHouseMenu({ x: e.clientX, y: e.clientY });
+      setIsHouseMenuOpen(true);
       return;
     }
 
@@ -313,50 +315,54 @@ export default function GridCanvas({
       className="relative flex-1 bg-background overflow-hidden touch-none"
       data-testid="grid-container"
     >
-      <Popover open={!!houseMenu} onOpenChange={(isOpen) => !isOpen && setHouseMenu(null)}>
-        <PopoverTrigger asChild>
-          <canvas
-            ref={canvasRef}
-            className="cursor-grab active:cursor-grabbing w-full h-full"
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={() => {
-              handleMouseUp();
-              setHoveredCell(null);
-            }}
-            onClick={handleClick}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            data-testid="grid-canvas"
-          />
-        </PopoverTrigger>
-        <PopoverContent 
-          className="w-48"
-          style={{
-            position: 'fixed',
-            left: houseMenu?.x,
-            top: houseMenu?.y
-          }}
-        >
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Maison</h4>
-              <p className="text-sm text-muted-foreground">
-                Gérez votre maison.
-              </p>
-            </div>
-            <div className="grid gap-2">
-              <Button variant="outline" size="sm" onClick={() => { onMoveHouse(); setHouseMenu(null); }}>Déménager</Button>
-              <Button variant="outline" size="sm" onClick={() => { onAccessJobs(); setHouseMenu(null); }}>Métiers</Button>
-              <Button variant="outline" size="sm" onClick={() => { onChangeColor(); setHouseMenu(null); }}>Changer la couleur</Button>
-              <Button variant="destructive" size="sm" onClick={() => { onDeleteHouse(); setHouseMenu(null); }}>Supprimer la maison</Button>
+      <canvas
+        ref={canvasRef}
+        className="cursor-grab active:cursor-grabbing w-full h-full"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={() => {
+          handleMouseUp();
+          setHoveredCell(null);
+        }}
+        onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        data-testid="grid-canvas"
+      />
+      <Dialog open={isHouseMenuOpen} onOpenChange={setIsHouseMenuOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gérer ma maison</DialogTitle>
+            <DialogDescription>
+              Que souhaitez-vous faire ?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Button variant="outline" onClick={() => { onMoveHouse(); setIsHouseMenuOpen(false); }}>Déménager</Button>
+            <Button variant="outline" onClick={() => { onAccessJobs(); setIsHouseMenuOpen(false); }}>Métiers</Button>
+            <Button variant="destructive" onClick={() => { onDeleteHouse(); setIsHouseMenuOpen(false); }}>Supprimer la maison</Button>
+          </div>
+          <div className="space-y-2 pt-4">
+            <h4 className="font-medium leading-none">Changer la couleur</h4>
+            <div className="flex flex-wrap gap-2">
+              {['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'].map((color) => (
+                <Button
+                  key={color}
+                  variant="outline"
+                  className="w-8 h-8 p-0"
+                  style={{ backgroundColor: color }}
+                  onClick={() => {
+                    onChangeColor(color);
+                    setIsHouseMenuOpen(false);
+                  }}
+                />
+              ))}
             </div>
           </div>
-        </PopoverContent>
-      </Popover>
-
+        </DialogContent>
+      </Dialog>
       {hoveredCell && (
         <div
           className="absolute top-4 left-4 bg-card border border-card-border px-3 py-1.5 rounded-md text-sm font-mono"

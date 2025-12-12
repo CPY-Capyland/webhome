@@ -258,10 +258,6 @@ export default function Home() {
     window.location.href = "/jobs";
   };
 
-  const onChangeColor = () => {
-    // For now, the color picker is in the sidebar
-  };
-
   const onDeleteHouse = () => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer votre maison ?")) {
       deleteHouseMutation.mutate();
@@ -304,7 +300,7 @@ export default function Home() {
                   onCellClick={handleCellClick}
                   onMoveHouse={onMoveHouse}
                   onAccessJobs={onAccessJobs}
-                  onChangeColor={onChangeColor}
+                  onChangeColor={(color) => changeColorMutation.mutate({ color })}
                   onDeleteHouse={onDeleteHouse}
                 />
               </div>
