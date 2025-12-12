@@ -8,6 +8,7 @@ const COOLDOWN_HOURS = 24;
 const GRID_SIZE = 500;
 const VOTING_DELAY_HOURS = 24;
 const VOTING_DURATION_HOURS = 168; // 1 week
+const JOB_COOLDOWN_HOURS = 24;
 
 function isVotable(law: any): boolean {
   // Must be active status
@@ -37,6 +38,12 @@ function canChangeColor(lastColorChangedAt: Date): boolean {
   return now >= cooldownEnd;
 }
 
+function canTakeJob(jobStoppedAt: Date | null | undefined): boolean {
+  if (!jobStoppedAt) return true; // No cooldown if never stopped a job
+  const now = new Date();
+  const cooldownEnd = new Date(jobStoppedAt.getTime() + JOB_COOLDOWN_HOURS * 60 * 60 * 1000);
+  return now >= cooldownEnd;
+}
 
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated()) {
@@ -406,11 +413,51 @@ Les maisons doivent générer au moins 30% de leurs besoins énergétiques à pa
         return res.status(403).json({ error: "Vous devez placer une maison pour choisir un métier" });
       }
 
+      // Fetch the full user object to check current job and cooldown
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      // Check if user already has a job
+      if (user.jobId) {
+        return res.status(400).json({ error: "Vous avez déjà un métier" });
+      }
+
+      // Check job cooldown
+      if (!canTakeJob(user.jobStoppedAt)) {
+        return res.status(400).json({ error: "Vous êtes en période de récupération avant de pouvoir prendre un nouveau métier" });
+      }
+
       const updatedUser = await storage.updateUserJob(userId, jobId);
       res.json(updatedUser);
     } catch (error) {
       console.error("Error choosing job:", error);
       res.status(500).json({ error: "Échec du choix du métier" });
+    }
+  });
+
+  // Quit a job
+  app.post("/api/jobs/quit", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user.id;
+
+      // Fetch the full user object to check current job
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      // Check if user has a job to quit
+      if (!user.jobId) {
+        return res.status(400).json({ error: "Vous n'avez pas de métier à quitter" });
+      }
+
+      const updatedUser = await storage.quitJob(userId);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error quitting job:", error);
+      res.status(500).json({ error: "Échec pour quitter le métier" });
     }
   });
 

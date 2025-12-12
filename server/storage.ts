@@ -46,6 +46,8 @@ export interface IStorage {
   updateUserJob(userId: string, jobId: string): Promise<User>;
   getUsersWithJobs(): Promise<any[]>;
   updateUserLastPaidAt(userId: string): Promise<User>;
+  updateUserBalanceAndLastPaidAt(userId: string, netSalary: number): Promise<User>;
+  quitJob(userId: string): Promise<User>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -343,6 +345,28 @@ export class DatabaseStorage implements IStorage {
   async updateUserLastPaidAt(userId: string): Promise<User> {
     const [user] = await db.update(users)
       .set({ lastPaidAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateUserBalanceAndLastPaidAt(userId: string, netSalary: number): Promise<User> {
+    const [user] = await db.update(users)
+      .set({
+        balance: sql`${users.balance} + ${netSalary}`,
+        lastPaidAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async quitJob(userId: string): Promise<User> {
+    const [user] = await db.update(users)
+      .set({
+        jobId: null,
+        jobStoppedAt: new Date(),
+      })
       .where(eq(users.id, userId))
       .returning();
     return user;

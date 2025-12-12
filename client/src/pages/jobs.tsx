@@ -5,9 +5,14 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { useToast } from "@/hooks/use-toast";
 import type { Job, User } from "@shared/schema";
 import Header from "@/components/Header";
+import { CooldownTimer } from "@/components/CooldownTimer";
+import { useState } from "react"; // Added useState
+
+const JOB_COOLDOWN_HOURS = 24;
 
 export default function Jobs() {
   const { toast } = useToast();
+  const [isWorking, setIsWorking] = useState(false); // New state for work animation
 
   const { data: user } = useQuery<User | null>({
     queryKey: ["/api/me"],
@@ -16,6 +21,10 @@ export default function Jobs() {
   const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],
   });
+
+  const currentJob = user?.jobId ? jobs.find(job => job.id === user.jobId) : null;
+  const isJobCooldownActive = user?.jobStoppedAt ? (new Date().getTime() < (new Date(user.jobStoppedAt).getTime() + JOB_COOLDOWN_HOURS * 60 * 60 * 1000)) : false;
+  const jobCooldownEndTime = user?.jobStoppedAt ? (new Date(user.jobStoppedAt).getTime() + JOB_COOLDOWN_HOURS * 60 * 60 * 1000) : null;
 
   const chooseJobMutation = useMutation({
     mutationFn: async (jobId: string) => {
@@ -38,6 +47,28 @@ export default function Jobs() {
     },
   });
 
+  const quitJobMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/jobs/quit");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+      toast({
+        title: "Métier quitté",
+        description: "Vous avez quitté votre métier. Vous êtes en période de récupération.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Échec pour quitter le métier",
+        variant: "destructive",
+      });
+    },
+  });
+
+
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header
@@ -49,27 +80,62 @@ export default function Jobs() {
         showMenuButton={false}
       />
       <div className="flex-1 overflow-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Choisir un métier</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {jobs.map((job) => (
-            <Card key={job.id}>
-              <CardHeader>
-                <CardTitle>{job.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Salaire Brut: {job.grossSalary}</p>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  onClick={() => chooseJobMutation.mutate(job.id)}
-                  disabled={user?.jobId === job.id}
-                >
-                  {user?.jobId === job.id ? "Métier actuel" : "Choisir"}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        <h1 className="text-2xl font-bold mb-4">Métiers</h1>
+
+        {user?.jobId && currentJob ? (
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle>Votre métier actuel : {currentJob.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>Salaire Brut: {currentJob.grossSalary} 🍊</p>
+              <p>Frais: {currentJob.fees} 🍊</p>
+              <p>Salaire Net: {currentJob.grossSalary + currentJob.fees} 🍊</p>
+            </CardContent>
+            <CardFooter className="flex gap-2">
+              <Button
+                onClick={() => {
+                  setIsWorking(true);
+                  setTimeout(() => setIsWorking(false), 3000); // Simulate work for 3 seconds
+                }}
+                disabled={isWorking}
+              >
+                {isWorking ? "Travail en cours..." : "Commencer le travail"}
+              </Button>
+              <Button onClick={() => alert(`Votre salaire net est de ${currentJob.grossSalary + currentJob.fees} 🍊 après ${-currentJob.fees} 🍊 de frais.`)}>Consulter mon bulletin de paye</Button>
+              <Button variant="destructive" onClick={() => quitJobMutation.mutate()} disabled={quitJobMutation.isPending}>Arrêter d'exercer</Button>
+            </CardFooter>
+          </Card>
+        ) : (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Choisir un métier</h2>
+            {isJobCooldownActive && jobCooldownEndTime && (
+              <div className="mb-4 text-center text-red-500">
+                Vous êtes en période de récupération. Vous pourrez choisir un nouveau métier dans : <CooldownTimer endTime={jobCooldownEndTime} />
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {jobs.map((job) => (
+                <Card key={job.id}>
+                  <CardHeader>
+                    <CardTitle>{job.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p>Salaire Brut: {job.grossSalary} 🍊</p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      onClick={() => chooseJobMutation.mutate(job.id)}
+                      disabled={isJobCooldownActive || chooseJobMutation.isPending}
+                    >
+                      Choisir
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

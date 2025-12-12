@@ -7,10 +7,9 @@ function startSalaryCron() {
       console.log('Paying salaries...');
       const usersWithJobs = await storage.getUsersWithJobs();
       for (const { user, job } of usersWithJobs) {
-        // Here you would add the logic to actually add the salary to the user's balance.
-        // Since there is no balance management yet, I will just update the lastPaidAt timestamp.
-        await storage.updateUserLastPaidAt(user.id);
-        console.log(`Paid salary to ${user.username}`);
+        const netSalary = job.grossSalary + job.fees; // fees are negative, so addition works
+        await storage.updateUserBalanceAndLastPaidAt(user.id, netSalary);
+        console.log(`Paid ${netSalary} to ${user.username}. New balance: ${user.balance + netSalary}`);
       }
       console.log('Salaries paid.');
     }
