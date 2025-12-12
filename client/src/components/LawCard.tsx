@@ -22,11 +22,11 @@ interface LawCardProps {
 const VOTING_DELAY_MS = 24 * 60 * 60 * 1000; // 24 hours
 const VOTE_CHANGE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 
-const getVotingStatus = (law: Law, canVote: boolean) => {
+const getVotingStatus = (law: Law, canVote: boolean, localUserVotedAt: Date | undefined) => {
   const now = new Date();
   const publishedAt = new Date(law.publishedAt);
   const votingStart = new Date(publishedAt.getTime() + VOTING_DELAY_MS);
-  const userVotedAt = law.userVotedAt ? new Date(law.userVotedAt) : null;
+  const userVotedAt = localUserVotedAt || (law.userVotedAt ? new Date(law.userVotedAt) : null);
 
   let statusText: string;
   let statusColorClass: string;
@@ -46,7 +46,7 @@ const getVotingStatus = (law: Law, canVote: boolean) => {
     statusText = "Proposition";
     statusColorClass = "bg-orange-500 text-white";
   } else if (law.votingEndsAt && now < new Date(law.votingEndsAt)) {
-    if (law.userVote && userVotedAt) {
+    if ((law.userVote || localUserVotedAt) && userVotedAt) {
       const voteChangeEnd = new Date(userVotedAt.getTime() + VOTE_CHANGE_WINDOW_MS);
       if (now < voteChangeEnd) {
         statusText = "Vote modifiable";
@@ -74,12 +74,14 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
   const [currentVote, setCurrentVote] = useState<"up" | "down" | null>(
     law.userVote || null
   );
-  const [localUserVotedAt, setLocalUserVotedAt] = useState<Date | undefined>(law.userVotedAt);
+  const [localUserVotedAt, setLocalUserVotedAt] = useState<Date | undefined>(
+    law.userVotedAt ? new Date(law.userVotedAt) : undefined
+  );
 
   const totalVoters = law.upvotes + law.downvotes;
   const isVotable = canVote && canUserVote && (law.isVotable !== false);
   const { statusText, statusColorClass, canChangeVote, timeLeftToChangeVote } = useMemo(
-    () => getVotingStatus(law, isVotable),
+    () => getVotingStatus(law, isVotable, localUserVotedAt),
     [law, isVotable, currentVote, localUserVotedAt]
   );
 
@@ -96,10 +98,13 @@ export default function LawCard({ law, canVote, canUserVote = true, onVote }: La
   const handleVote = (vote: "up" | "down") => {
     if (!isVotable && !canChangeVote) return;
 
-    let newVote: "up" | "down" | null = currentVote === vote ? null : vote;
+    const newVote: "up" | "down" | null = currentVote === vote ? null : vote;
+    
+    if (!localUserVotedAt) {
+      setLocalUserVotedAt(new Date());
+    }
     
     setCurrentVote(newVote);
-    setLocalUserVotedAt(new Date()); // Update local voted at timestamp
     onVote(law.id, newVote);
   };
 
