@@ -43,6 +43,13 @@
       "when": 1765413210182,
       "tag": "0005_late_onslaught",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1765413210183,
+      "tag": "0006_add_balance_to_users",
+      "breakpoints": true
     }
   ]
 }
