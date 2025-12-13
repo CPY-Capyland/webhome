@@ -95,6 +95,17 @@ export default function Header({
           size="icon"
           variant="ghost"
           asChild
+          data-testid="button-home"
+        >
+          <a href="/">
+            <Home className="h-4 w-4" />
+          </a>
+        </Button>
+
+        <Button
+          size="icon"
+          variant="ghost"
+          asChild
           data-testid="button-github"
         >
           <a href="https://github.com/CPY-Capyland/webhome" target="_blank">
