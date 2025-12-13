@@ -3,12 +3,22 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import type { Job, User } from "@shared/schema";
+import type { Job, User, HouseWithUser } from "@shared/schema";
 import Header from "@/components/Header";
 import CooldownTimer from "@/components/CooldownTimer";
 import { useState } from "react"; // Added useState
 
 const JOB_COOLDOWN_HOURS = 24;
+
+interface UserStatus {
+  hasHouse: boolean;
+  house: {
+    x: number;
+    y: number;
+    lastMovedAt: string;
+    canMove: boolean;
+  } | null;
+}
 
 export default function Jobs() {
   const { toast } = useToast();
@@ -18,11 +28,34 @@ export default function Jobs() {
     queryKey: ["/api/me"],
   });
 
-  console.log('User object:', user);
+
+
+  // Fetch user status
+  const { data: userStatus } = useQuery<UserStatus>({
+    queryKey: ["/api/user/status"],
+  });
+
+  // Fetch all houses
+  const { data: houses = [] } = useQuery<HouseWithUser[]>({
+    queryKey: ["/api/houses"],
+  });
 
   const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],
   });
+
+  const userHouse: HouseWithUser | null = userStatus?.house && user ? {
+    id: "", // This is not available here, but it's not used in the GridCanvas
+    ...userStatus.house,
+    userId: user.id,
+    username: user.username,
+    isCurrentUser: true,
+    color: "", // This is not available here, but it's not used for the current user's house
+    lastColorChangedAt: new Date(), // This is not available here
+    placedAt: new Date(), // This is not available here
+    lastMovedAt: new Date(userStatus.house.lastMovedAt),
+  } : null;
+  const lastMoveTime = userStatus?.house?.lastMovedAt ? new Date(userStatus.house.lastMovedAt) : null;
 
   const currentJob = user?.jobId ? jobs.find(job => job.id === user.jobId) : null;
   const isJobCooldownActive = user?.jobStoppedAt ? (new Date().getTime() < (new Date(user.jobStoppedAt).getTime() + JOB_COOLDOWN_HOURS * 60 * 60 * 1000)) : false;
@@ -75,9 +108,9 @@ export default function Jobs() {
     <div className="h-screen flex flex-col bg-background">
       <Header
         user={user}
-        houseLocation={null}
-        lastMoveTime={null}
-        totalHouses={0}
+        houseLocation={userHouse ? { x: userHouse.x, y: userHouse.y } : null}
+        lastMoveTime={lastMoveTime}
+        totalHouses={houses.length}
         gridSize={500}
         showMenuButton={false}
       />
