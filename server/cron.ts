@@ -8,8 +8,8 @@ function startSalaryCron() {
       const usersWithJobs = await storage.getUsersWithJobs();
       for (const { user, job } of usersWithJobs) {
         const netSalary = job.grossSalary + job.fees; // fees are negative, so addition works
-        await storage.updateUserBalanceAndLastPaidAt(user.id, netSalary);
-        console.log(`Paid ${netSalary} to ${user.username}. New balance: ${user.balance + netSalary}`);
+        await storage.updateUserLastPaidAt(user.id);
+        console.log(`Paid ${netSalary} to ${user.username}.`);
       }
       console.log('Salaries paid.');
     }
