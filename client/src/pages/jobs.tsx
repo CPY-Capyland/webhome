@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { useToast } from "@/hooks/use-toast";
 import type { Job, User } from "@shared/schema";
 import Header from "@/components/Header";
-import { CooldownTimer } from "@/components/CooldownTimer";
+import CooldownTimer from "@/components/CooldownTimer";
 import { useState } from "react"; // Added useState
 
 const JOB_COOLDOWN_HOURS = 24;
