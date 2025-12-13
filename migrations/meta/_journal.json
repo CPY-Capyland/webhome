@@ -50,6 +50,13 @@
       "when": 1765413210183,
       "tag": "0006_add_balance_to_users",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1765413210184,
+      "tag": "0007_add_job_stopped_at_to_users",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "job_stopped_at" timestamp;
