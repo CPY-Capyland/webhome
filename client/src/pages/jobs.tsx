@@ -18,6 +18,8 @@ export default function Jobs() {
     queryKey: ["/api/me"],
   });
 
+  console.log('User object:', user);
+
   const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],
   });
