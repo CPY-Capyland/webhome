@@ -25,10 +25,19 @@ export default function Home() {
   const { toast } = useToast();
   const [placementCoords, setPlacementCoords] = useState<{ x: number; y: number } | null>(null);
   const [isPlacementModalOpen, setIsPlacementModalOpen] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [selectedUserHouse, setSelectedUserHouse] = useState<HouseWithUser | null>(null);
 
   // Fetch current user
   const { data: user } = useQuery<User | null>({
     queryKey: ["/api/me"],
+  });
+
+  // Fetch user search results
+  const { data: userSearchResults = [] } = useQuery<HouseWithUser[]>({
+    queryKey: ["/api/users/search", userSearchQuery],
+    queryFn: () => apiRequest("GET", `/api/users/search?username=${userSearchQuery}`).then(res => res.json()),
+    enabled: !!userSearchQuery, // Only run the query if userSearchQuery is not empty
   });
 
   // Fetch user status
@@ -289,6 +298,9 @@ export default function Home() {
               canSuggest={canSuggest}
               onVote={handleVote}
               onSuggestionSubmit={handleSuggestionSubmit}
+              onUserSearch={setUserSearchQuery}
+              userSearchResults={userSearchResults}
+              onUserSelect={setSelectedUserHouse}
             />
           ) : (
             <>
@@ -302,6 +314,7 @@ export default function Home() {
                   onAccessJobs={onAccessJobs}
                   onChangeColor={(color) => changeColorMutation.mutate({ color })}
                   onDeleteHouse={onDeleteHouse}
+                  selectedUserHouse={selectedUserHouse}
                 />
               </div>
               <div>
@@ -314,6 +327,9 @@ export default function Home() {
                   onSuggestionSubmit={handleSuggestionSubmit}
                   userHouse={userHouse}
                   onChangeColor={(color) => changeColorMutation.mutate({ color })}
+                  onUserSearch={setUserSearchQuery}
+                  userSearchResults={userSearchResults}
+                  onUserSelect={setSelectedUserHouse}
                 />
               </div>
             </>

@@ -38,7 +38,10 @@ interface GridCanvasProps {
   onMoveHouse: () => void;
   onAccessJobs: () => void;
   onChangeColor: (color: string) => void;
+  onAccessJobs: () => void;
+  onChangeColor: (color: string) => void;
   onDeleteHouse: () => void;
+  selectedUserHouse: House | null;
 }
 
 export default function GridCanvas({
@@ -50,6 +53,7 @@ export default function GridCanvas({
   onAccessJobs,
   onChangeColor,
   onDeleteHouse,
+  selectedUserHouse,
 }: GridCanvasProps) {
   const { ref: containerRef, entry: containerEntry } = useResizeObserver<HTMLDivElement>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -64,6 +68,20 @@ export default function GridCanvas({
   const cellSize = BASE_CELL_SIZE * zoom;
 
   const housesMap = new Map(houses.map((h) => [`${h.x},${h.y}`, h]));
+
+  useEffect(() => {
+    if (selectedUserHouse && canvasRef.current) {
+        const canvas = canvasRef.current;
+        const targetX = selectedUserHouse.x;
+        const targetY = selectedUserHouse.y;
+
+        setOffset({
+            x: canvas.width / 2 - targetX * cellSize,
+            y: canvas.height / 2 - targetY * cellSize,
+        });
+        setZoom(1); // Reset zoom to 1 when centering
+    }
+  }, [selectedUserHouse, cellSize]);
 
   const getTouchPosition = (e: React.TouchEvent) => {
     const canvas = canvasRef.current;

@@ -46,6 +46,7 @@ export interface IStorage {
   updateUserJob(userId: string, jobId: string): Promise<User>;
   getUsersWithJobs(): Promise<any[]>;
   updateUserLastPaidAt(userId: string): Promise<User>;
+  searchUsersWithHouse(username: string): Promise<HouseWithUser[]>;
 
   quitJob(userId: string): Promise<User>;
 }
@@ -361,6 +362,25 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  async searchUsersWithHouse(username: string): Promise<HouseWithUser[]> {
+    const result = await db.select({
+        id: houses.id,
+        userId: houses.userId,
+        x: houses.x,
+        y: houses.y,
+        placedAt: houses.placedAt,
+        lastMovedAt: houses.lastMovedAt,
+        lastColorChangedAt: houses.lastColorChangedAt,
+        color: houses.color,
+        username: users.username,
+    })
+    .from(houses)
+    .innerJoin(users, eq(houses.userId, users.id))
+    .where(sql`${users.username} ILIKE ${'%' + username + '%'}`);
+
+    return result.map(r => ({ ...r, username: r.username || 'Unknown' }));
   }
 }
 

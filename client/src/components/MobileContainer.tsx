@@ -19,6 +19,10 @@ interface MobileContainerProps {
   canSuggest: boolean;
   onVote: (lawId: string, vote: "up" | "down" | null) => void;
   onSuggestionSubmit: (title: string, text: string) => void;
+  onUserSearch: (query: string) => void;
+  userSearchResults: HouseWithUser[];
+  onUserSelect: (house: HouseWithUser) => void;
+  onUserSelect: (house: HouseWithUser) => void;
 }
 
 export default function MobileContainer({
@@ -56,6 +60,11 @@ export default function MobileContainer({
             onVote={onVote}
             isMobile
             setMobileView={setMobileView}
+            userHouse={userHouse}
+            onChangeColor={() => {}} // No color change in mobile container
+            onUserSearch={onUserSearch}
+            userSearchResults={userSearchResults}
+            onUserSelect={onUserSelect}
           />
         );
       case "propose":

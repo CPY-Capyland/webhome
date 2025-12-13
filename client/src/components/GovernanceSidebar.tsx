@@ -19,6 +19,9 @@ interface GovernanceSidebarProps {
   setMobileView?: (view: "grid" | "laws" | "propose" | "feed") => void;
   userHouse: HouseWithUser | null;
   onChangeColor: (color: string) => void;
+  onUserSearch: (query: string) => void;
+  userSearchResults: HouseWithUser[];
+  onUserSelect: (house: HouseWithUser) => void;
 }
 
 export default function GovernanceSidebar({
@@ -34,6 +37,7 @@ export default function GovernanceSidebar({
   onChangeColor,
 }: GovernanceSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
   const activeLaws = laws.filter((l) => l.status === "active").length;
   const [color, setColor] = useState(userHouse?.color || "#FF0000");
 
@@ -58,7 +62,7 @@ export default function GovernanceSidebar({
       </div>
 
       <div className="p-4 border-b border-sidebar-border">
-        <div className="relative">
+        <div className="relative mb-2">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Rechercher une loi..."
@@ -67,10 +71,43 @@ export default function GovernanceSidebar({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher un utilisateur..."
+            className="pl-8"
+            value={userSearchQuery}
+            onChange={(e) => {
+              setUserSearchQuery(e.target.value);
+              onUserSearch(e.target.value);
+            }}
+          />
+        </div>
+      </div>
+
       </div>
 
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
+          {userSearchQuery && userSearchResults.length > 0 && (
+            <div className="pb-4 border-b border-sidebar-border">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                    Résultats de la recherche d'utilisateurs
+                </h3>
+                <div className="space-y-2">
+                    {userSearchResults.map((house) => (
+                        <Button
+                            key={house.userId}
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => onUserSelect(house)}
+                        >
+                            {house.username} ({house.x}, {house.y})
+                        </Button>
+                    ))}
+                </div>
+            </div>
+          )}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
               Lois publiées

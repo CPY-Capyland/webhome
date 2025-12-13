@@ -461,5 +461,21 @@ Les maisons doivent générer au moins 30% de leurs besoins énergétiques à pa
     }
   });
 
+  // Search for users by username
+  app.get("/api/users/search", async (req: Request, res: Response) => {
+    try {
+        const { username } = req.query;
+        if (!username || typeof username !== "string") {
+            return res.status(400).json({ error: "Nom d'utilisateur invalide" });
+        }
+
+        const usersWithHouses = await storage.searchUsersWithHouse(username);
+        res.json(usersWithHouses);
+    } catch (error) {
+        console.error("Error searching users:", error);
+        res.status(500).json({ error: "Échec de la recherche d'utilisateurs" });
+    }
+  });
+
   return httpServer;
 }
