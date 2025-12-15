@@ -7,6 +7,7 @@ interface UserStatus {
   house: {
     x: number;
     y: number;
+    size: number;
     lastMovedAt: string;
     canMove: boolean;
   } | null;
@@ -39,7 +40,7 @@ export default function Market() {
   const lastMoveTime = userStatus?.house?.lastMovedAt ? new Date(userStatus.house.lastMovedAt) : null;
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-white">
       <Header
         user={user}
         houseLocation={userHouse ? { x: userHouse.x, y: userHouse.y } : null}
@@ -49,7 +50,7 @@ export default function Market() {
         showMenuButton={false}
       />
       <div className="flex-1 overflow-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Marché</h1>
+        <h1 className="text-2xl font-bold mb-4 text-orange-500">LeBonCapy</h1>
         <p>Le marché arrive bientôt !</p>
       </div>
     </div>

@@ -101,7 +101,7 @@ export default function Jobs() {
   });
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-blue-100">
       <Header
         user={user}
         houseLocation={userHouse ? { x: userHouse.x, y: userHouse.y } : null}
@@ -112,7 +112,7 @@ export default function Jobs() {
       />
       <div className="flex-1 overflow-auto p-4">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Métiers</h1>
+        <h1 className="text-2xl font-bold mb-4">Pôle Capy</h1>
           <Button asChild>
             <a href="/">Retour à la grille</a>
           </Button>
