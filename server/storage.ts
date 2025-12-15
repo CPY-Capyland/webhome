@@ -24,6 +24,7 @@ export interface IStorage {
   createHouse(userId: string, x: number, y: number): Promise<House>;
   moveHouse(userId: string, x: number, y: number): Promise<House>;
   updateHouseColor(userId: string, color: string): Promise<House>;
+  upgradeHouse(userId: string, newSize: number, upgradeCost: number): Promise<House>;
   
   // Laws
   getLaw(id: string): Promise<Law | undefined>;
@@ -139,6 +140,26 @@ export class DatabaseStorage implements IStorage {
       .where(eq(houses.userId, userId))
       .returning();
     return house;
+  }
+
+  async upgradeHouse(userId: string, newSize: number, upgradeCost: number): Promise<House> {
+    return db.transaction(async (tx) => {
+      const [user] = await tx.select().from(users).where(eq(users.id, userId));
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      await tx.update(users)
+        .set({ balance: user.balance - upgradeCost })
+        .where(eq(users.id, userId));
+
+      const [upgradedHouse] = await tx.update(houses)
+        .set({ size: newSize })
+        .where(eq(houses.userId, userId))
+        .returning();
+
+      return upgradedHouse;
+    });
   }
 
   // Laws

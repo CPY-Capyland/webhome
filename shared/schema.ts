@@ -32,6 +32,7 @@ export const houses = pgTable("houses", {
   userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id).unique(),
   x: integer("x").notNull(),
   y: integer("y").notNull(),
+  size: integer("size").default(1).notNull(),
   placedAt: timestamp("placed_at").defaultNow().notNull(),
   lastMovedAt: timestamp("last_moved_at").defaultNow().notNull(),
   lastColorChangedAt: timestamp("last_color_changed_at").defaultNow().notNull(),

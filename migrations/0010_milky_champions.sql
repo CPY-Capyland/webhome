@@ -1,0 +1,1 @@
+ALTER TABLE "houses" ADD COLUMN "size" integer DEFAULT 1 NOT NULL;

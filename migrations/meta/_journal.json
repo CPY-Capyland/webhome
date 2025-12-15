@@ -71,6 +71,13 @@
       "when": 1765805873456,
       "tag": "0009_clever_lady_ursula",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1765806424345,
+      "tag": "0010_milky_champions",
+      "breakpoints": true
     }
   ]
 }
