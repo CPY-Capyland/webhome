@@ -128,7 +128,7 @@ export default function Header({
                 <p className="font-medium">{user.username}</p>
               </DropdownMenuItem>
               <DropdownMenuItem disabled className="text-sm text-muted-foreground">
-                {/* <p className="font-medium">Solde : {user.balance} 🍊</p> */}
+                <p className="font-medium">Solde : {user.balance} 🍊</p>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => window.location.href = '/auth/logout'}>
                 <LogOut className="mr-2 h-4 w-4" />

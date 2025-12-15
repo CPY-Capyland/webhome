@@ -13,7 +13,7 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(), // defaultNow().notNull()
   jobId: varchar("job_id", { length: 36 }).references(() => jobs.id),
   lastPaidAt: timestamp("last_paid_at"),
-  // balance: integer("balance").default(0).notNull(),
+  balance: integer("balance").default(0).notNull(),
   jobStoppedAt: timestamp("job_stopped_at"),
 });
 

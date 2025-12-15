@@ -111,7 +111,12 @@ export default function Jobs() {
         showMenuButton={false}
       />
       <div className="flex-1 overflow-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Métiers</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Métiers</h1>
+          <Button asChild>
+            <a href="/">Retour à la grille</a>
+          </Button>
+        </div>
 
         {user?.jobId && currentJob ? (
           <Card className="mb-4">
