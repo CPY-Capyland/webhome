@@ -51,7 +51,8 @@ export interface IStorage {
   updateUserJob(userId: string, jobId: string): Promise<User>;
   getUsersWithJobs(): Promise<any[]>;
   updateUserLastPaidAt(userId: string): Promise<User>;
-  paySalary(userId: string, salary: number): Promise<User>;
+  updateUserBonus(userId: string, bonus: number): Promise<User>;
+  payAllSalaries(): Promise<void>;
   searchUsersWithHouse(username: string): Promise<HouseWithUser[]>;
 
   quitJob(userId: string): Promise<User>;
@@ -372,20 +373,34 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async paySalary(userId: string, salary: number): Promise<User> {
-    return db.transaction(async (tx) => {
-      const [user] = await tx.select().from(users).where(eq(users.id, userId));
-      if (!user) {
-        throw new Error("User not found");
-      }
+  async updateUserBonus(userId: string, bonus: number): Promise<User> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) {
+      throw new Error("User not found");
+    }
 
-      const [updatedUser] = await tx.update(users)
-        .set({ balance: user.balance + salary, lastPaidAt: new Date() })
-        .where(eq(users.id, userId))
-        .returning();
-      
-      return updatedUser;
-    });
+    const [updatedUser] = await db.update(users)
+      .set({ bonus: user.bonus + bonus })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
+  }
+
+  async payAllSalaries(): Promise<void> {
+    const usersWithJobs = await this.getUsersWithJobs();
+    for (const { user, job } of usersWithJobs) {
+      await db.transaction(async (tx) => {
+        const salary = job.grossSalary + job.fees + user.bonus;
+        await tx.update(users)
+          .set({
+            balance: user.balance + salary,
+            bonus: 0,
+            lastPaidAt: new Date(),
+          })
+          .where(eq(users.id, user.id));
+      });
+    }
   }
 
   async getUsersWithJobs(): Promise<any[]> {

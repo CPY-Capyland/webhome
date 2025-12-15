@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   jobId: varchar("job_id", { length: 36 }).references(() => jobs.id),
   lastPaidAt: timestamp("last_paid_at"),
   balance: integer("balance").default(0).notNull(),
+  bonus: integer("bonus").default(0).notNull(),
   jobStoppedAt: timestamp("job_stopped_at"),
 });
 

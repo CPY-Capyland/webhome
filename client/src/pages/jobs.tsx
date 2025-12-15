@@ -103,22 +103,18 @@ export default function Jobs() {
     },
   });
 
-  const workMutation = useMutation({
+  const bonusMutation = useMutation({
     mutationFn: async (bonus: number) => {
-      const res = await apiRequest("POST", "/api/jobs/work", { bonus });
+      const res = await apiRequest("POST", "/api/jobs/bonus", { bonus });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/me"] });
-      toast({
-        title: "Travail terminé",
-        description: "Vous avez reçu votre salaire.",
-      });
     },
     onError: (error: Error) => {
       toast({
         title: "Erreur",
-        description: error.message || "Échec du travail",
+        description: error.message || "Échec de la mise à jour du bonus",
         variant: "destructive",
       });
     },
@@ -129,17 +125,16 @@ export default function Jobs() {
     const newClickCount = workClickCount + 1;
     setWorkClickCount(newClickCount);
 
-    let bonus = 0;
     if (newClickCount % 10 === 0) {
-      bonus = Math.floor(Math.random() * 10) + 1;
+      const bonus = Math.floor(Math.random() * 10) + 1;
       toast({
         title: "Bonus !",
         description: `Vous avez reçu un bonus de ${bonus} 🍊 !`,
       });
+      bonusMutation.mutate(bonus);
     }
 
     setTimeout(() => {
-      workMutation.mutate(bonus);
       setIsWorking(false);
     }, 3000);
   };
