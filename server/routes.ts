@@ -505,6 +505,31 @@ Les maisons doivent générer au moins 30% de leurs besoins énergétiques à pa
     }
   });
 
+  app.post("/api/jobs/work", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const { bonus } = req.body;
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.jobId) {
+        return res.status(400).json({ error: "Vous n'avez pas de métier" });
+      }
+
+      const job = await storage.getJob(user.jobId);
+      if (!job) {
+        return res.status(400).json({ error: "Métier non trouvé" });
+      }
+
+      const salary = job.grossSalary + job.fees + (bonus || 0);
+
+      const updatedUser = await storage.paySalary(userId, salary);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error paying salary:", error);
+      res.status(500).json({ error: "Échec du paiement du salaire" });
+    }
+  });
+
   // Search for users by username
   app.get("/api/users/search", async (req: Request, res: Response) => {
     try {

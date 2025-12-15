@@ -7,6 +7,7 @@ import {
   type Suggestion, type InsertSuggestion,
   type Election, type InsertElection,
   type Candidate, type InsertCandidate,
+  type Job,
   type LawWithVotes
 } from "@shared/schema";
 import { db } from "./db";
@@ -45,10 +46,12 @@ export interface IStorage {
   getAllSuggestions(): Promise<Suggestion[]>;
 
   // Jobs
+  getJob(jobId: string): Promise<Job | undefined>;
   getAllJobs(): Promise<any[]>;
   updateUserJob(userId: string, jobId: string): Promise<User>;
   getUsersWithJobs(): Promise<any[]>;
   updateUserLastPaidAt(userId: string): Promise<User>;
+  paySalary(userId: string, salary: number): Promise<User>;
   searchUsersWithHouse(username: string): Promise<HouseWithUser[]>;
 
   quitJob(userId: string): Promise<User>;
@@ -356,12 +359,33 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(jobs);
   }
 
+  async getJob(jobId: string): Promise<Job | undefined> {
+    const [job] = await db.select().from(jobs).where(eq(jobs.id, jobId));
+    return job;
+  }
+
   async updateUserJob(userId: string, jobId: string): Promise<User> {
     const [user] = await db.update(users)
       .set({ jobId })
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  async paySalary(userId: string, salary: number): Promise<User> {
+    return db.transaction(async (tx) => {
+      const [user] = await tx.select().from(users).where(eq(users.id, userId));
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const [updatedUser] = await tx.update(users)
+        .set({ balance: user.balance + salary, lastPaidAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      return updatedUser;
+    });
   }
 
   async getUsersWithJobs(): Promise<any[]> {

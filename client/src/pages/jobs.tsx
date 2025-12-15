@@ -26,6 +26,7 @@ export default function Jobs() {
   const { toast } = useToast();
   const [isWorking, setIsWorking] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [workClickCount, setWorkClickCount] = useState(0);
 
   const { data: user } = useQuery<User | null>({
     queryKey: ["/api/me"],
@@ -102,6 +103,47 @@ export default function Jobs() {
     },
   });
 
+  const workMutation = useMutation({
+    mutationFn: async (bonus: number) => {
+      const res = await apiRequest("POST", "/api/jobs/work", { bonus });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+      toast({
+        title: "Travail terminé",
+        description: "Vous avez reçu votre salaire.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Échec du travail",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleWork = () => {
+    setIsWorking(true);
+    const newClickCount = workClickCount + 1;
+    setWorkClickCount(newClickCount);
+
+    let bonus = 0;
+    if (newClickCount % 10 === 0) {
+      bonus = Math.floor(Math.random() * 10) + 1;
+      toast({
+        title: "Bonus !",
+        description: `Vous avez reçu un bonus de ${bonus} 🍊 !`,
+      });
+    }
+
+    setTimeout(() => {
+      workMutation.mutate(bonus);
+      setIsWorking(false);
+    }, 3000);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-blue-100">
       <Header
@@ -132,10 +174,7 @@ export default function Jobs() {
             </CardContent>
             <CardFooter className="flex gap-2">
               <Button
-                onClick={() => {
-                  setIsWorking(true);
-                  setTimeout(() => setIsWorking(false), 3000);
-                }}
+                onClick={handleWork}
                 disabled={isWorking}
               >
                 {isWorking ? "Travail en cours..." : "Commencer le travail"}

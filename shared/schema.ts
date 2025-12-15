@@ -151,6 +151,7 @@ export const insertLawSchema = createInsertSchema(laws).omit({ publishedAt: true
 export const insertVoteSchema = createInsertSchema(votes).omit({ votedAt: true });
 export const insertSuggestionSchema = createInsertSchema(suggestions).omit({ submittedAt: true, reviewed: true });
 export const insertUserSessionSchema = createInsertSchema(userSessions);
+export const insertJobSchema = createInsertSchema(jobs);
 export const insertElectionSchema = createInsertSchema(elections);
 export const insertCandidateSchema = createInsertSchema(candidates);
 export const insertElectionVoteSchema = createInsertSchema(electionVotes);
@@ -173,6 +174,9 @@ export type Vote = typeof votes.$inferSelect;
 
 export type InsertSuggestion = z.infer<typeof insertSuggestionSchema>;
 export type Suggestion = typeof suggestions.$inferSelect;
+
+export type InsertJob = z.infer<typeof insertJobSchema>;
+export type Job = typeof jobs.$inferSelect;
 
 export type InsertElection = z.infer<typeof insertElectionSchema>;
 export type Election = typeof elections.$inferSelect;
