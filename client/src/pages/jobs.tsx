@@ -3,9 +3,16 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import type { Job, User, HouseWithUser } from "@shared/schema";
-import Header from "@/components/Header";
-import CooldownTimer from "@/components/CooldownTimer";
+import type { User, HouseWithUser } from "@shared/schema";
+import { CooldownTimer } from "@/components/CooldownTimer";
+
+interface Job {
+  id: string;
+  name: string;
+  grossSalary: number;
+  fees: number;
+  justification: string;
+}
 import { useState } from "react"; // Added useState
 
 const JOB_COOLDOWN_HOURS = 24;
@@ -20,22 +27,20 @@ interface UserStatus {
   } | null;
 }
 
+
 export default function Jobs() {
   const { toast } = useToast();
-  const [isWorking, setIsWorking] = useState(false); // New state for work animation
+  const [isWorking, setIsWorking] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   const { data: user } = useQuery<User | null>({
     queryKey: ["/api/me"],
   });
 
-
-
-  // Fetch user status
   const { data: userStatus } = useQuery<UserStatus>({
     queryKey: ["/api/user/status"],
   });
 
-  // Fetch all houses
   const { data: houses = [] } = useQuery<HouseWithUser[]>({
     queryKey: ["/api/houses"],
   });
@@ -45,14 +50,14 @@ export default function Jobs() {
   });
 
   const userHouse: HouseWithUser | null = userStatus?.house && user ? {
-    id: "", // This is not available here, but it's not used in the GridCanvas
+    id: "",
     ...userStatus.house,
     userId: user.id,
     username: user.username,
     isCurrentUser: true,
-    color: "", // This is not available here, but it's not used for the current user's house
-    lastColorChangedAt: new Date(), // This is not available here
-    placedAt: new Date(), // This is not available here
+    color: "",
+    lastColorChangedAt: new Date(),
+    placedAt: new Date(),
     lastMovedAt: new Date(userStatus.house.lastMovedAt),
   } : null;
   const lastMoveTime = userStatus?.house?.lastMovedAt ? new Date(userStatus.house.lastMovedAt) : null;
@@ -103,7 +108,6 @@ export default function Jobs() {
     },
   });
 
-
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header
@@ -131,7 +135,7 @@ export default function Jobs() {
               <Button
                 onClick={() => {
                   setIsWorking(true);
-                  setTimeout(() => setIsWorking(false), 3000); // Simulate work for 3 seconds
+                  setTimeout(() => setIsWorking(false), 3000);
                 }}
                 disabled={isWorking}
               >
@@ -149,25 +153,44 @@ export default function Jobs() {
                 Vous êtes en période de récupération. Vous pourrez choisir un nouveau métier dans : <CooldownTimer endTime={jobCooldownEndTime} />
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {jobs.map((job) => (
-                <Card key={job.id}>
-                  <CardHeader>
-                    <CardTitle>{job.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p>Salaire Brut: {job.grossSalary} 🍊</p>
-                  </CardContent>
-                  <CardFooter>
-                    <Button
-                      onClick={() => chooseJobMutation.mutate(job.id)}
-                      disabled={isJobCooldownActive || chooseJobMutation.isPending}
-                    >
-                      Choisir
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-1">
+                <div className="flex flex-col gap-2">
+                  {jobs.map((job) => (
+                    <Card key={job.id} onClick={() => setSelectedJob(job)} className={`cursor-pointer ${selectedJob?.id === job.id ? 'border-primary' : ''}`}>
+                      <CardHeader>
+                        <CardTitle>{job.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p>Salaire Brut: {job.grossSalary} 🍊</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                {selectedJob && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{selectedJob.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p>Salaire Brut: {selectedJob.grossSalary} 🍊</p>
+                      <p>Frais de Compensation: {selectedJob.fees} 🍊</p>
+                      <p>Revenu Net: {selectedJob.grossSalary + selectedJob.fees} 🍊</p>
+                      <p>Justification: {selectedJob.justification}</p>
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        onClick={() => chooseJobMutation.mutate(selectedJob.id)}
+                        disabled={isJobCooldownActive || chooseJobMutation.isPending}
+                      >
+                        Choisir
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -175,3 +198,4 @@ export default function Jobs() {
     </div>
   );
 }
+

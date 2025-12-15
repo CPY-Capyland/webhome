@@ -23,6 +23,7 @@ export const jobs = pgTable("jobs", {
   name: text("name").notNull(),
   grossSalary: integer("gross_salary").notNull(),
   fees: integer("fees").notNull(),
+  justification: text("justification"),
 });
 
 // Houses table - one per user on the 500x500 grid

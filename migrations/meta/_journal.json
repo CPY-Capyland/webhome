@@ -57,6 +57,13 @@
       "when": 1765413210184,
       "tag": "0007_add_job_stopped_at_to_users",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1765804683822,
+      "tag": "0008_parallel_brood",
+      "breakpoints": true
     }
   ]
 }

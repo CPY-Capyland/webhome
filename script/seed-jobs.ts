@@ -19,15 +19,15 @@ const pool = new Pool({
 const db = drizzle(pool);
 
 const jobsData = [
-  { name: 'Agriculteur', grossSalary: 40, fees: -10 },
-  { name: 'Ouvrier BTP', grossSalary: 45, fees: -12 },
-  { name: 'Éboueur / Nettoyeur', grossSalary: 48, fees: -10 },
-  { name: 'Enseignant', grossSalary: 50, fees: -15 },
-  { name: 'Force de l’Ordre', grossSalary: 60, fees: -25 },
-  { name: 'Transporteur', grossSalary: 65, fees: -30 },
-  { name: 'Ingénieur Énergie', grossSalary: 75, fees: -40 },
-  { name: 'Médecin', grossSalary: 85, fees: -50 },
-  { name: 'Juge / Dirigeant', grossSalary: 99, fees: -65 },
+  { name: 'Agriculteur', grossSalary: 40, fees: -10, justification: 'Semences, entretien, météo' },
+  { name: 'Ouvrier BTP', grossSalary: 45, fees: -12, justification: 'Usure physique, outils' },
+  { name: 'Éboueur / Nettoyeur', grossSalary: 48, fees: -10, justification: 'Traitements sanitaires' },
+  { name: 'Enseignant', grossSalary: 50, fees: -15, justification: 'Matériel pédagogique' },
+  { name: 'Force de l’Ordre', grossSalary: 60, fees: -25, justification: 'Assurance + équipement' },
+  { name: 'Transporteur', grossSalary: 65, fees: -30, justification: 'Carburant, péages' },
+  { name: 'Ingénieur Énergie', grossSalary: 75, fees: -40, justification: 'Pièces rares' },
+  { name: 'Médecin', grossSalary: 85, fees: -50, justification: 'Coûts médicaux' },
+  { name: 'Juge / Dirigeant', grossSalary: 99, fees: -65, justification: 'Sécurité + représentation' },
 ];
 
 async function main() {
