@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import type { User, HouseWithUser } from "@shared/schema";
+import type { User, HouseWithUser, Election } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -19,7 +19,7 @@ interface UserStatus {
   } | null;
 }
 
-export default function Election() {
+export default function ElectionPage() {
   const { toast } = useToast();
   const [platform, setPlatform] = useState("");
 
@@ -29,6 +29,10 @@ export default function Election() {
 
   const { data: userStatus } = useQuery<UserStatus>({
     queryKey: ["/api/user/status"],
+  });
+
+  const { data: election } = useQuery<Election | null>({
+    queryKey: ["/api/elections/status"],
   });
 
   const { data: houses = [] } = useQuery<HouseWithUser[]>({
@@ -69,6 +73,9 @@ export default function Election() {
     },
   });
 
+  const candidacyStartDate = election ? new Date(election.startDate.getTime() - 7 * 24 * 60 * 60 * 1000) : null;
+  const candidacyEndDate = election ? new Date(election.startDate.getTime() - 1 * 24 * 60 * 60 * 1000) : null;
+
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header
@@ -86,6 +93,17 @@ export default function Election() {
             <a href="/">Retour à la grille</a>
           </Button>
         </div>
+        {election && (
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold">Statut de l'élection</h2>
+            <p>Phase actuelle : {election.status}</p>
+            {candidacyStartDate && candidacyEndDate && (
+              <p>
+                Période de candidature : du {candidacyStartDate.toLocaleDateString()} au {candidacyEndDate.toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        )}
         <div className="flex flex-col gap-4">
           <h2 className="text-xl font-semibold">Devenir candidat</h2>
           <p>Présentez votre profession de foi pour devenir candidat à l'élection.</p>
