@@ -118,6 +118,32 @@ export const suggestionsRelations = relations(suggestions, ({ one }) => ({
   }),
 }));
 
+// Elections
+export const elections = pgTable("elections", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  startDate: timestamp("start_date").notNull(),
+  status: text("status", { enum: ["candidacy", "campaign", "voting", "closed"] }).notNull().default("candidacy"),
+  winnerId: varchar("winner_id", { length: 36 }).references(() => users.id),
+  mandateEndDate: timestamp("mandate_end_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const candidates = pgTable("candidates", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  electionId: varchar("election_id", { length: 36 }).notNull().references(() => elections.id),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id),
+  platform: text("platform").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const electionVotes = pgTable("election_votes", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  electionId: varchar("election_id", { length: 36 }).notNull().references(() => elections.id),
+  voterId: varchar("voter_id", { length: 36 }).notNull().references(() => users.id),
+  candidateId: varchar("candidate_id", { length: 36 }).references(() => candidates.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ createdAt: true });
 export const insertHouseSchema = createInsertSchema(houses).omit({ placedAt: true, lastMovedAt: true });
@@ -174,28 +200,3 @@ export type LawWithVotes = Law & {
   isInTiebreak?: boolean;
   publisherName?: string;
 };
-
-// Elections
-export const elections = pgTable("elections", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  startDate: timestamp("start_date").notNull(),
-  status: text("status", { enum: ["candidacy", "campaign", "voting", "closed"] }).notNull().default("candidacy"),
-  winnerId: varchar("winner_id", { length: 36 }).references(() => users.id),
-  mandateEndDate: timestamp("mandate_end_date"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const electionVotes = pgTable("election_votes", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  electionId: varchar("election_id", { length: 36 }).notNull().references(() => elections.id),
-  voterId: varchar("voter_id", { length: 36 }).notNull().references(() => users.id),
-  candidateId: varchar("candidate_id", { length: 36 }).references(() => candidates.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-export const candidates = pgTable("candidates", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  electionId: varchar("election_id", { length: 36 }).notNull().references(() => elections.id),
-  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id),
-  platform: text("platform").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
