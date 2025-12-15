@@ -142,6 +142,9 @@ export default function Header({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <DropdownMenuItem onClick={() => window.location.href = '/election'}>
+                <span>Élection</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => window.location.href = '/auth/logout'}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Se déconnecter</span>

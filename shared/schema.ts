@@ -125,6 +125,9 @@ export const insertLawSchema = createInsertSchema(laws).omit({ publishedAt: true
 export const insertVoteSchema = createInsertSchema(votes).omit({ votedAt: true });
 export const insertSuggestionSchema = createInsertSchema(suggestions).omit({ submittedAt: true, reviewed: true });
 export const insertUserSessionSchema = createInsertSchema(userSessions);
+export const insertElectionSchema = createInsertSchema(elections);
+export const insertCandidateSchema = createInsertSchema(candidates);
+export const insertElectionVoteSchema = createInsertSchema(electionVotes);
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -145,6 +148,15 @@ export type Vote = typeof votes.$inferSelect;
 export type InsertSuggestion = z.infer<typeof insertSuggestionSchema>;
 export type Suggestion = typeof suggestions.$inferSelect;
 
+export type InsertElection = z.infer<typeof insertElectionSchema>;
+export type Election = typeof elections.$inferSelect;
+
+export type InsertCandidate = z.infer<typeof insertCandidateSchema>;
+export type Candidate = typeof candidates.$inferSelect;
+
+export type InsertElectionVote = z.infer<typeof insertElectionVoteSchema>;
+export type ElectionVote = typeof electionVotes.$inferSelect;
+
 // API response types
 export type HouseWithUser = House & { 
   isCurrentUser?: boolean;
@@ -162,3 +174,28 @@ export type LawWithVotes = Law & {
   isInTiebreak?: boolean;
   publisherName?: string;
 };
+
+// Elections
+export const elections = pgTable("elections", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  startDate: timestamp("start_date").notNull(),
+  status: text("status", { enum: ["candidacy", "campaign", "voting", "closed"] }).notNull().default("candidacy"),
+  winnerId: varchar("winner_id", { length: 36 }).references(() => users.id),
+  mandateEndDate: timestamp("mandate_end_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const electionVotes = pgTable("election_votes", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  electionId: varchar("election_id", { length: 36 }).notNull().references(() => elections.id),
+  voterId: varchar("voter_id", { length: 36 }).notNull().references(() => users.id),
+  candidateId: varchar("candidate_id", { length: 36 }).references(() => candidates.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export const candidates = pgTable("candidates", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  electionId: varchar("election_id", { length: 36 }).notNull().references(() => elections.id),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id),
+  platform: text("platform").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

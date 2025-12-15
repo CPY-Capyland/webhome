@@ -519,5 +519,47 @@ Les maisons doivent générer au moins 30% de leurs besoins énergétiques à pa
     }
   });
 
+  app.post("/api/elections/candidate", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const { platform } = req.body;
+
+      const userHouse = await storage.getHouse(userId);
+      if (!userHouse) {
+        return res.status(403).json({ error: "Vous devez posséder une maison pour être candidat" });
+      }
+
+      let currentElection = await storage.getCurrentElection();
+      if (!currentElection) {
+        const now = new Date();
+        const startDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        currentElection = await storage.createElection({
+          id: randomUUID(),
+          startDate,
+        });
+      }
+
+      const now = new Date();
+      const candidacyStartDate = new Date(currentElection.startDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const candidacyEndDate = new Date(currentElection.startDate.getTime() - 1 * 24 * 60 * 60 * 1000);
+
+      if (now < candidacyStartDate || now > candidacyEndDate) {
+        return res.status(400).json({ error: "La période de candidature n'est pas active" });
+      }
+
+      const candidate = await storage.createCandidate({
+        id: randomUUID(),
+        electionId: currentElection.id,
+        userId,
+        platform,
+      });
+
+      res.json(candidate);
+    } catch (error) {
+      console.error("Error creating candidate:", error);
+      res.status(500).json({ error: "Échec de la création de la candidature" });
+    }
+  });
+
   return httpServer;
 }

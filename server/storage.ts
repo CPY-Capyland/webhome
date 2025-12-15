@@ -1,10 +1,12 @@
 import { 
-  users, houses, laws, votes, suggestions, jobs,
+  users, houses, laws, votes, suggestions, jobs, elections, candidates,
   type User, type InsertUser,
   type House, type InsertHouse,
   type Law, type InsertLaw,
   type Vote, type InsertVote,
   type Suggestion, type InsertSuggestion,
+  type Election, type InsertElection,
+  type Candidate, type InsertCandidate,
   type LawWithVotes
 } from "@shared/schema";
 import { db } from "./db";
@@ -50,6 +52,11 @@ export interface IStorage {
   searchUsersWithHouse(username: string): Promise<HouseWithUser[]>;
 
   quitJob(userId: string): Promise<User>;
+
+  // Elections
+  getCurrentElection(): Promise<Election | undefined>;
+  createElection(election: InsertElection): Promise<Election>;
+  createCandidate(candidate: InsertCandidate): Promise<Candidate>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -402,6 +409,22 @@ export class DatabaseStorage implements IStorage {
     .where(sql`${users.username} ILIKE ${'%' + username + '%'}`);
 
     return result.map(r => ({ ...r, username: r.username || 'Unknown' }));
+  }
+
+  // Elections
+  async getCurrentElection(): Promise<Election | undefined> {
+    const [election] = await db.select().from(elections).orderBy(sql`start_date desc`).limit(1);
+    return election;
+  }
+
+  async createElection(election: InsertElection): Promise<Election> {
+    const [newElection] = await db.insert(elections).values(election).returning();
+    return newElection;
+  }
+
+  async createCandidate(candidate: InsertCandidate): Promise<Candidate> {
+    const [newCandidate] = await db.insert(candidates).values(candidate).returning();
+    return newCandidate;
   }
 }
 
