@@ -175,7 +175,7 @@ export default function Jobs() {
                       <p>Salaire Brut: {selectedJob.grossSalary} 🍊</p>
                       <p>Frais de Compensation: {selectedJob.fees} 🍊</p>
                       <p>Revenu Net: {selectedJob.grossSalary + selectedJob.fees} 🍊</p>
-                      <p>Justification: {selectedJob.justification}</p>
+                      <p>Avantages: {selectedJob.justification}</p>
                     </CardContent>
                     <CardFooter>
                       <Button
