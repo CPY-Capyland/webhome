@@ -28,6 +28,7 @@ interface House {
   isCurrentUser?: boolean;
   username: string;
   color: string;
+  expansionUnits: number;
 }
 
 interface GridCanvasProps {
