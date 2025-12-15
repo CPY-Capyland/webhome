@@ -11,6 +11,7 @@ interface UserStatus {
     x: number;
     y: number;
     size: number;
+    color: string;
     lastMovedAt: string;
     canMove: boolean;
   } | null;

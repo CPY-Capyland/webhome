@@ -15,6 +15,8 @@ interface UserStatus {
   house: {
     x: number;
     y: number;
+    color: string;
+    size: number;
     lastMovedAt: string;
     canMove: boolean;
   } | null;

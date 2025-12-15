@@ -17,6 +17,8 @@ interface UserStatus {
   house: {
     x: number;
     y: number;
+    color: string;
+    size: number;
     lastMovedAt: string;
     canMove: boolean;
   } | null;
@@ -133,6 +135,7 @@ export default function Home() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/houses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/houses/mine"] });
       toast({
         title: "Couleur de la maison modifiée",
@@ -180,7 +183,7 @@ export default function Home() {
     userId: user.id,
     username: user.username,
     isCurrentUser: true,
-    color: "", // This is not available here, but it's not used for the current user's house
+    color: userStatus.house.color,
     lastColorChangedAt: new Date(), // This is not available here
     placedAt: new Date(), // This is not available here
     lastMovedAt: new Date(userStatus.house.lastMovedAt),
