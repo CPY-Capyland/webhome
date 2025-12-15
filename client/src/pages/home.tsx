@@ -10,6 +10,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { House, LawWithVotes as Law, User, HouseWithUser } from "@shared/schema";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileContainer from "@/components/MobileContainer";
+import MoveModal from "@/components/MoveModal";
 
 interface UserStatus {
   hasHouse: boolean;
@@ -25,8 +26,11 @@ export default function Home() {
   const { toast } = useToast();
   const [placementCoords, setPlacementCoords] = useState<{ x: number; y: number } | null>(null);
   const [isPlacementModalOpen, setIsPlacementModalOpen] = useState(false);
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [selectedUserHouse, setSelectedUserHouse] = useState<HouseWithUser | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
+
 
   // Fetch current user
   const { data: user } = useQuery<User | null>({
@@ -183,41 +187,9 @@ export default function Home() {
   } : null;
   const lastMoveTime = userStatus?.house?.lastMovedAt ? new Date(userStatus.house.lastMovedAt) : null;
 
-  const handleCellClick = useCallback(
-    (x: number, y: number) => {
-      if (!user) {
-        toast({
-          title: "Connexion requise",
-          description: "Vous devez vous connecter avec Discord pour placer une maison.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!canPlace) {
-        toast({
-          title: "Délai actif",
-          description: "Vous devez attendre avant de pouvoir déplacer votre maison à nouveau.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const isOccupied = houses.some((h) => h.x === x && h.y === y);
-      if (isOccupied) {
-        toast({
-          title: "Espace occupé",
-          description: "Cet emplacement a déjà une maison.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setPlacementCoords({ x, y });
-      setIsPlacementModalOpen(true);
-    },
-    [user, canPlace, houses, toast]
-  );
+  const handleCellSelect = useCallback((cell: { x: number; y: number } | null) => {
+    setSelectedCell(cell);
+  }, []);
 
   const handleConfirmPlacement = useCallback(
     () => {
@@ -260,7 +232,12 @@ export default function Home() {
   );
 
   const onMoveHouse = () => {
-    setIsPlacementModalOpen(true);
+    if (selectedCell) {
+      setPlacementCoords(selectedCell);
+      setIsPlacementModalOpen(true);
+    } else {
+      setIsMoveModalOpen(true);
+    }
   };
 
   const onAccessJobs = () => {
@@ -292,10 +269,10 @@ export default function Home() {
               houses={houses}
               userHouse={userHouse}
               canPlace={canPlace}
-              onCellClick={handleCellClick}
+              onCellClick={handleCellSelect}
               laws={laws}
               hasHouse={hasHouse}
-              canSuggest={canSuggest}
+              canSuggest={hasHouse}
               onVote={handleVote}
               onSuggestionSubmit={handleSuggestionSubmit}
               onUserSearch={setUserSearchQuery}
@@ -309,7 +286,7 @@ export default function Home() {
                   houses={houses}
                   userHouse={userHouse}
                   canPlace={canPlace}
-                  onCellClick={handleCellClick}
+                  onCellSelect={handleCellSelect}
                   onMoveHouse={onMoveHouse}
                   onAccessJobs={onAccessJobs}
                   onChangeColor={(color) => changeColorMutation.mutate({ color })}
@@ -344,6 +321,14 @@ export default function Home() {
           onConfirm={handleConfirmPlacement}
           jobs={jobs}
           user={user}
+        />
+        <MoveModal
+          isOpen={isMoveModalOpen}
+          onClose={() => setIsMoveModalOpen(false)}
+          onConfirm={(x, y) => {
+            setPlacementCoords({ x, y });
+            setIsPlacementModalOpen(true);
+          }}
         />
       </div>
     </TooltipProvider>

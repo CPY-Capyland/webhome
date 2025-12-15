@@ -38,10 +38,9 @@ interface GridCanvasProps {
   onMoveHouse: () => void;
   onAccessJobs: () => void;
   onChangeColor: (color: string) => void;
-  onAccessJobs: () => void;
-  onChangeColor: (color: string) => void;
   onDeleteHouse: () => void;
   selectedUserHouse: House | null;
+  onCellSelect: (cell: { x: number; y: number } | null) => void;
 }
 
 export default function GridCanvas({
@@ -54,6 +53,7 @@ export default function GridCanvas({
   onChangeColor,
   onDeleteHouse,
   selectedUserHouse,
+  onCellSelect,
 }: GridCanvasProps) {
   const { ref: containerRef, entry: containerEntry } = useResizeObserver<HTMLDivElement>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -62,6 +62,7 @@ export default function GridCanvas({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
   const [isHouseMenuOpen, setIsHouseMenuOpen] = useState(false);
   const pinchStartDistanceRef = useRef<number | null>(null);
 
@@ -274,13 +275,10 @@ export default function GridCanvas({
       gridX >= 0 &&
       gridX < GRID_SIZE &&
       gridY >= 0 &&
-      gridY < GRID_SIZE &&
-      canPlace
+      gridY < GRID_SIZE
     ) {
-      const key = `${gridX},${gridY}`;
-      if (!housesMap.has(key)) {
-        onCellClick(gridX, gridY);
-      }
+      setSelectedCell({ x: gridX, y: gridY });
+      onCellSelect({ x: gridX, y: gridY });
     }
   };
 
@@ -293,6 +291,41 @@ export default function GridCanvas({
       setOffset({ x: newOffsetX, y: newOffsetY });
     }
   }, [zoom, offset]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { width, height } = canvas;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, width, height);
+
+    const startX = Math.floor(-offset.x / cellSize);
+    const endX = Math.ceil((width - offset.x) / cellSize);
+    const startY = Math.floor(-offset.y / cellSize);
+    const endY = Math.ceil((height - offset.y) / cellSize);
+
+    for (let x = Math.max(0, startX); x < Math.min(GRID_SIZE, endX); x++) {
+      for (let y = Math.max(0, startY); y < Math.min(GRID_SIZE, endY); y++) {
+        const screenX = x * cellSize + offset.x;
+        const screenY = y * cellSize + offset.y;
+
+        ctx.strokeStyle = "rgba(128, 128, 128, 0.2)";
+        ctx.strokeRect(screenX, screenY, cellSize, cellSize);
+
+        if (selectedCell && selectedCell.x === x && selectedCell.y === y) {
+          ctx.fillStyle = "rgba(0, 128, 255, 0.3)";
+          ctx.fillRect(screenX, screenY, cellSize, cellSize);
+        }
+
+        const house = housesMap.get(`${x},${y}`);
+        if (house) {
+          ctx.fillStyle = house.isCurrentUser ? "blue" : house.color;
+          ctx.fillRect(screenX, screenY, cellSize, cellSize);
+        }
+      }
+    }
+  }, [offset, cellSize, housesMap, selectedCell, drawGrid]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -387,9 +420,13 @@ export default function GridCanvas({
           data-testid="text-coordinates"
         >
           ({hoveredCell.x}, {hoveredCell.y})
-          {hoveredCell.house && (
+          {hoveredCell.house ? (
             <span className="ml-2 font-sans font-bold">
               {hoveredCell.house.username}
+            </span>
+          ) : (
+            <span className="ml-2 font-sans font-bold text-green-500">
+              Libre
             </span>
           )}
         </div>
