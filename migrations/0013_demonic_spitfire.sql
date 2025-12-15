@@ -1,0 +1,1 @@
+ALTER TABLE "houses" ADD COLUMN "expansion_units" integer DEFAULT 0 NOT NULL;

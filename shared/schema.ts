@@ -34,6 +34,7 @@ export const houses = pgTable("houses", {
   x: integer("x").notNull(),
   y: integer("y").notNull(),
   size: integer("size").default(1).notNull(),
+  expansionUnits: integer("expansion_units").default(0).notNull(),
   placedAt: timestamp("placed_at").defaultNow().notNull(),
   lastMovedAt: timestamp("last_moved_at").defaultNow().notNull(),
   lastColorChangedAt: timestamp("last_color_changed_at").defaultNow().notNull(),
@@ -165,7 +166,7 @@ export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
 
 export type InsertHouse = z.infer<typeof insertHouseSchema>;
-export type House = typeof houses.$inferSelect;
+export type House = typeof houses.$inferSelect & { expansionUnits: number };
 
 export type InsertLaw = z.infer<typeof insertLawSchema>;
 export type Law = typeof laws.$inferSelect;
