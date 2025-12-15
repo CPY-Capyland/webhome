@@ -127,9 +127,21 @@ export default function Header({
               <DropdownMenuItem disabled>
                 <p className="font-medium">{user.username}</p>
               </DropdownMenuItem>
-              <DropdownMenuItem disabled className="text-sm text-muted-foreground">
-                <p className="font-medium">Solde : {user.balance} 🍊</p>
-              </DropdownMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <DropdownMenuItem className="text-sm text-muted-foreground" onSelect={(e) => e.preventDefault()}>
+                    <p className="font-medium">Solde : {user.balance} 🍊</p>
+                  </DropdownMenuItem>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="left" align="start" forceMount>
+                  <DropdownMenuItem onClick={() => window.location.href = '/market'}>
+                    <span>Marché</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => window.location.href = '/real-estate-agency'}>
+                    <span>Agence Immobilière</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <DropdownMenuItem onClick={() => window.location.href = '/auth/logout'}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Se déconnecter</span>
