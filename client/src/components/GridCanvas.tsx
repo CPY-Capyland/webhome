@@ -34,11 +34,12 @@ interface GridCanvasProps {
   houses: House[];
   userHouse: House | null;
   canPlace: boolean;
-  onCellClick: (x: number, y: number) => void;
   onMoveHouse: () => void;
   onAccessJobs: () => void;
   onChangeColor: (color: string) => void;
   onDeleteHouse: () => void;
+  onManageUpgrades: () => void;
+  isUpgradeMode: boolean;
   selectedUserHouse: House | null;
   onCellSelect: (cell: { x: number; y: number } | null) => void;
 }
@@ -47,11 +48,12 @@ export default function GridCanvas({
   houses,
   userHouse,
   canPlace,
-  onCellClick,
   onMoveHouse,
   onAccessJobs,
   onChangeColor,
   onDeleteHouse,
+  onManageUpgrades,
+  isUpgradeMode,
   selectedUserHouse,
   onCellSelect,
 }: GridCanvasProps) {
@@ -64,6 +66,7 @@ export default function GridCanvas({
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
   const [isHouseMenuOpen, setIsHouseMenuOpen] = useState(false);
+  const [expansionCells, setExpansionCells] = useState<{ x: number; y: number }[]>([]);
   const pinchStartDistanceRef = useRef<number | null>(null);
 
   const cellSize = BASE_CELL_SIZE * zoom;
@@ -265,6 +268,19 @@ export default function GridCanvas({
     const gridX = Math.floor((mouseX - offset.x) / cellSize);
     const gridY = Math.floor((mouseY - offset.y) / cellSize);
 
+    if (isUpgradeMode) {
+      if (userHouse && userHouse.expansionUnits > expansionCells.length) {
+        setExpansionCells((prev) => {
+          const existing = prev.find((c) => c.x === gridX && c.y === gridY);
+          if (existing) {
+            return prev.filter((c) => c.x !== gridX || c.y !== gridY);
+          }
+          return [...prev, { x: gridX, y: gridY }];
+        });
+      }
+      return;
+    }
+
     const house = housesMap.get(`${gridX},${gridY}`);
     if (house && house.isCurrentUser) {
       setIsHouseMenuOpen(true);
@@ -318,6 +334,14 @@ export default function GridCanvas({
           ctx.fillRect(screenX, screenY, cellSize, cellSize);
         }
 
+        const isExpansionCell = expansionCells.some(
+          (c) => c.x === x && c.y === y
+        );
+        if (isUpgradeMode && isExpansionCell) {
+          ctx.fillStyle = "rgba(0, 255, 0, 0.3)";
+          ctx.fillRect(screenX, screenY, cellSize, cellSize);
+        }
+
         const house = housesMap.get(`${x},${y}`);
         if (house) {
           ctx.fillStyle = house.isCurrentUser ? "blue" : house.color;
@@ -325,7 +349,7 @@ export default function GridCanvas({
         }
       }
     }
-  }, [offset, cellSize, housesMap, selectedCell, drawGrid]);
+  }, [offset, cellSize, housesMap, selectedCell, isUpgradeMode, expansionCells, drawGrid]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -392,6 +416,7 @@ export default function GridCanvas({
           </DialogHeader>
           <div className="grid gap-2">
             <Button variant="outline" onClick={() => { onMoveHouse(); setIsHouseMenuOpen(false); }}>Déménager</Button>
+            <Button variant="outline" onClick={() => { onManageUpgrades(); setIsHouseMenuOpen(false); }}>Gérer les améliorations</Button>
             <Button variant="outline" onClick={() => { onAccessJobs(); setIsHouseMenuOpen(false); }}>Métiers</Button>
             <Button variant="destructive" onClick={() => { onDeleteHouse(); setIsHouseMenuOpen(false); }}>Supprimer la maison</Button>
           </div>
@@ -500,6 +525,16 @@ export default function GridCanvas({
         <span className="mx-1">|</span>
         <span>Zoom: {Math.round(zoom * 100)}%</span>
       </div>
+
+      {isUpgradeMode && (
+        <div className="absolute top-4 right-4 flex flex-col gap-2">
+          <div className="bg-card border border-card-border px-3 py-1.5 rounded-md text-sm">
+            <p>Unités d'amélioration restantes : {userHouse?.expansionUnits - expansionCells.length}</p>
+          </div>
+          <Button onClick={() => console.log("confirm upgrades")}>Valider</Button>
+          <Button variant="secondary" onClick={onManageUpgrades}>Annuler</Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -32,6 +32,7 @@ export default function Home() {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [selectedUserHouse, setSelectedUserHouse] = useState<HouseWithUser | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
+  const [isUpgradeMode, setIsUpgradeMode] = useState(false);
 
 
   // Fetch current user
@@ -253,6 +254,10 @@ export default function Home() {
     }
   };
 
+  const onManageUpgrades = () => {
+    setIsUpgradeMode(!isUpgradeMode);
+  };
+
   return (
     <TooltipProvider>
       <div className="h-screen flex flex-col bg-background">
@@ -294,6 +299,8 @@ export default function Home() {
                   onAccessJobs={onAccessJobs}
                   onChangeColor={(color) => changeColorMutation.mutate({ color })}
                   onDeleteHouse={onDeleteHouse}
+                  onManageUpgrades={onManageUpgrades}
+                  isUpgradeMode={isUpgradeMode}
                   selectedUserHouse={selectedUserHouse}
                 />
               </div>
