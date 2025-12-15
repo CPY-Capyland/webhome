@@ -42,6 +42,9 @@ interface GridCanvasProps {
   isUpgradeMode: boolean;
   selectedUserHouse: House | null;
   onCellSelect: (cell: { x: number; y: number } | null) => void;
+  userHasNoHouse: boolean;
+  setIsPlacementModalOpen: (isOpen: boolean) => void;
+  setPlacementCoords: (coords: { x: number; y: number } | null) => void;
 }
 
 export default function GridCanvas({
@@ -56,6 +59,9 @@ export default function GridCanvas({
   isUpgradeMode,
   selectedUserHouse,
   onCellSelect,
+  userHasNoHouse,
+  setIsPlacementModalOpen,
+  setPlacementCoords,
 }: GridCanvasProps) {
   const { ref: containerRef, entry: containerEntry } = useResizeObserver<HTMLDivElement>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -533,6 +539,19 @@ export default function GridCanvas({
           </div>
           <Button onClick={() => console.log("confirm upgrades")}>Valider</Button>
           <Button variant="secondary" onClick={onManageUpgrades}>Annuler</Button>
+        </div>
+      )}
+
+      {selectedCell && userHasNoHouse && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+          <Button
+            onClick={() => {
+              setPlacementCoords(selectedCell);
+              setIsPlacementModalOpen(true);
+            }}
+          >
+            S'installer ici
+          </Button>
         </div>
       )}
     </div>

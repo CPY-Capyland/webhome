@@ -302,6 +302,10 @@ export default function Home() {
                   onManageUpgrades={onManageUpgrades}
                   isUpgradeMode={isUpgradeMode}
                   selectedUserHouse={selectedUserHouse}
+                  userHasNoHouse={!hasHouse}
+                  setSelectedCell={setSelectedCell}
+                  setIsPlacementModalOpen={setIsPlacementModalOpen}
+                  setPlacementCoords={setPlacementCoords}
                 />
               </div>
               <div>
