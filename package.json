@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
-    "start": "npm run postbuild && NODE_ENV=production node dist/index.cjs",
+    "start": "npm run postbuild && npm run db:seed-jobs && NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:generate": "drizzle-kit generate",
     "db:seed-jobs": "tsx script/seed-jobs.ts",
