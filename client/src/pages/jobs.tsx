@@ -3,17 +3,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import type { User, HouseWithUser } from "@shared/schema";
-import { CooldownTimer } from "@/components/CooldownTimer";
-
-interface Job {
-  id: string;
-  name: string;
-  grossSalary: number;
-  fees: number;
-  justification: string;
-}
-import { useState } from "react"; // Added useState
+import type { Job, User, HouseWithUser } from "@shared/schema";
+import Header from "@/components/Header";
+import CooldownTimer from "@/components/CooldownTimer";
+import { useState } from "react";
 
 const JOB_COOLDOWN_HOURS = 24;
 
@@ -26,7 +19,6 @@ interface UserStatus {
     canMove: boolean;
   } | null;
 }
-
 
 export default function Jobs() {
   const { toast } = useToast();
