@@ -33,6 +33,13 @@ export default function ElectionPage() {
 
   const { data: election } = useQuery<Election | null>({
     queryKey: ["/api/elections/status"],
+    select: (data) => {
+      if (!data) return null;
+      return {
+        ...data,
+        startDate: new Date(data.startDate),
+      };
+    },
   });
 
   const { data: houses = [] } = useQuery<HouseWithUser[]>({
