@@ -115,7 +115,6 @@ export const votesRelations = relations(votes, ({ one }) => ({
 }));
 
 export const suggestionsRelations = relations(suggestions, ({ one }) => ({
-.
   user: one(users, {
     fields: [suggestions.userId],
     references: [users.id],
@@ -152,7 +151,7 @@ export const electionVotes = pgTable("election_votes", {
 export const insertUserSchema = createInsertSchema(users).omit({ createdAt: true });
 export const insertHouseSchema = createInsertSchema(houses).omit({ placedAt: true, lastMovedAt: true });
 export const insertLawSchema = createInsertSchema(laws).omit({ publishedAt: true });
-export const insertVoteSchema = acreateInsertSchema(votes).omit({ votedAt: true });
+export const insertVoteSchema = createInsertSchema(votes).omit({ votedAt: true });
 export const insertSuggestionSchema = createInsertSchema(suggestions).omit({ submittedAt: true, reviewed: true });
 export const insertUserSessionSchema = createInsertSchema(userSessions);
 export const insertJobSchema = createInsertSchema(jobs);

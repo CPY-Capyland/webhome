@@ -441,17 +441,6 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-
-  async updateUserLastPaidAt(userId: string): Promise<User> {
-    const [user] = await db.update(users)
-      .set({ lastPaidAt: new Date() })
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
-  }
-
-
-
   async quitJob(userId: string): Promise<User> {
     const [user] = await db.update(users)
       .set({
