@@ -3,15 +3,52 @@ import ReactDOM from 'react-dom/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast, Toaster } from '@/components/ui/toaster';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
+import { useQuery, useMutation, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { queryClient } from '@/lib/queryClient';
+import type { User, House, Job, UserWithHouse } from '@shared/schema';
 
 const AdminApp = () => {
+  const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+
+  const { data: users = [] } = useQuery<UserWithHouse[]>({
+    queryKey: ['adminUsers'],
+    queryFn: () => fetch('/api/admin/users').then(res => res.json()),
+    enabled: isAdmin,
+  });
+
+  const { data: jobs = [], refetch: refetchJobs } = useQuery<Job[]>({
+    queryKey: ['adminJobs'],
+    queryFn: () => fetch('/api/admin/jobs').then(res => res.json()),
+    enabled: isAdmin,
+  });
+
+  const updateJobMutation = useMutation({
+    mutationFn: async (job: Job) => {
+      const res = await fetch(`/api/admin/jobs/${job.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(job),
+      });
+      if (!res.ok) throw new Error('Failed to update job');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminJobs'] });
+      toast({ title: 'Métier mis à jour', description: 'Les détails du métier ont été enregistrés.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erreur', description: error.message || 'Échec de la mise à jour du métier', variant: 'destructive' });
+    },
+  });
 
   useEffect(() => {
     fetch('/api/admin/status')
@@ -48,6 +85,21 @@ const AdminApp = () => {
     } else {
       toast({ title: 'Erreur', description: 'Échec de la déconnexion', variant: 'destructive' });
     }
+  };
+
+  const handleJobChange = (
+    jobId: string,
+    field: keyof Job,
+    value: string | number
+  ) => {
+    const updatedJobs = jobs.map((job) =>
+      job.id === jobId ? { ...job, [field]: value } : job
+    );
+    queryClient.setQueryData(['adminJobs'], updatedJobs);
+  };
+
+  const handleSaveJob = (job: Job) => {
+    updateJobMutation.mutate(job);
   };
 
   if (!isAdmin) {
@@ -94,8 +146,102 @@ const AdminApp = () => {
         </Button>
       </header>
       <main className="p-4">
-        <h2 className="text-2xl font-semibold mb-4">Bienvenue, administrateur!</h2>
-        <p>Contenu du panneau d'administration en construction...</p>
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+            <TabsTrigger value="jobs">Métiers</TabsTrigger>
+          </TabsList>
+          <TabsContent value="users">
+            <div className="mt-4">
+              <h2 className="text-2xl font-semibold mb-4">Gestion des utilisateurs</h2>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom d'utilisateur</TableHead>
+                    <TableHead>Solde</TableHead>
+                    <TableHead>Maison (X, Y)</TableHead>
+                    <TableHead>Taille maison</TableHead>
+                    <TableHead>Unités d'expansion</TableHead>
+                    <TableHead>Expansion placées</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.username}</TableCell>
+                      <TableCell>{user.balance} 🍊</TableCell>
+                      <TableCell>
+                        {user.house ? `${user.house.x}, ${user.house.y}` : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {user.house ? user.house.size : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {user.house ? user.house.expansionUnits : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {user.house ? user.house.expansion.length : 'N/A'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          <TabsContent value="jobs">
+            <div className="mt-4">
+              <h2 className="text-2xl font-semibold mb-4">Gestion des métiers</h2>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Salaire brut</TableHead>
+                    <TableHead>Frais</TableHead>
+                    <TableHead>Justification</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {jobs.map((job) => (
+                    <TableRow key={job.id}>
+                      <TableCell>
+                        <Input
+                          value={job.name}
+                          onChange={(e) => handleJobChange(job.id, 'name', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={job.grossSalary}
+                          onChange={(e) => handleJobChange(job.id, 'grossSalary', parseInt(e.target.value))}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={job.fees}
+                          onChange={(e) => handleJobChange(job.id, 'fees', parseInt(e.target.value))}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Textarea
+                          value={job.justification || ''}
+                          onChange={(e) => handleJobChange(job.id, 'justification', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button onClick={() => handleSaveJob(job)}>
+                          Enregistrer
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
