@@ -130,14 +130,16 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Coordonnées invalides" });
       }
       
-      // Check if space is occupied
-      const existingHouse = await storage.getHouseByCoordinates(x, y);
-      if (existingHouse) {
-        return res.status(400).json({ error: "Cet emplacement est déjà occupé" });
-      }
-      
+      const allHouses = await storage.getAllHouses();
+      const occupiedCells = new Set(
+        allHouses.flatMap(h => [
+          ...Array.from({ length: h.size * h.size }, (_, i) => `${h.x + Math.floor(i / h.size)},${h.y + (i % h.size)}`),
+          ...(h.expansion as { x: number; y: number }[]).map(cell => `${cell.x},${cell.y}`),
+        ])
+      );
+
       // Check if user already has a house
-      const userHouse = await storage.getHouse(userId);
+      const userHouse = allHouses.find(h => h.userId === userId);
       
       if (userHouse) {
         // Check cooldown for moving
@@ -150,12 +152,20 @@ export async function registerRoutes(
         return res.json({ ...movedHouse, isCurrentUser: true, canMove: false });
       }
       
+      // Placing a new house
+      if (occupiedCells.has(`${x},${y}`)) {
+        return res.status(400).json({ error: "Cet emplacement est déjà occupé" });
+      }
+
       // Create new house
       const newHouse = await storage.createHouse(userId, x, y);
       res.json({ ...newHouse, isCurrentUser: true, canMove: false });
     } catch (error: any) {
       console.error("Error placing house:", error);
-      if (error.message === "DUPLICATE_ENTRY") {
+      if (error.message.includes("déjà occupée")) { // Catch the specific error from moveHouse
+        return res.status(400).json({ error: error.message });
+      }
+      if (error.code === '23505' || error.message === "DUPLICATE_ENTRY") {
         return res.status(400).json({ error: "Cet emplacement est déjà occupé" });
       }
       res.status(500).json({ error: "Échec du placement de la maison" });

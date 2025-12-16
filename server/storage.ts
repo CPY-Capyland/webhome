@@ -140,12 +140,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async moveHouse(userId: string, x: number, y: number): Promise<House> {
+    const house = await this.getHouse(userId);
+    if (!house) {
+      throw new Error("House not found");
+    }
+
+    const dx = x - house.x;
+    const dy = y - house.y;
+
+    const newExpansion = (house.expansion as { x: number; y: number }[]).map(cell => ({
+      x: cell.x + dx,
+      y: cell.y + dy,
+    }));
+
+    const allNewCells = [
+      ...Array.from({ length: house.size * house.size }, (_, i) => ({
+        x: x + Math.floor(i / house.size),
+        y: y + (i % house.size),
+      })),
+      ...newExpansion,
+    ];
+
+    const allHouses = await this.getAllHouses();
+    const otherOccupiedCells = new Set(
+      allHouses
+        .filter(h => h.userId !== userId)
+        .flatMap(h => [
+          ...Array.from({ length: h.size * h.size }, (_, i) => `${h.x + Math.floor(i / h.size)},${h.y + (i % h.size)}`),
+          ...(h.expansion as { x: number; y: number }[]).map(cell => `${cell.x},${cell.y}`),
+        ])
+    );
+
+    for (const cell of allNewCells) {
+      if (otherOccupiedCells.has(`${cell.x},${cell.y}`)) {
+        throw new Error(`La cellule (${cell.x}, ${cell.y}) est déjà occupée`);
+      }
+    }
+
     try {
-      const [house] = await db.update(houses)
-        .set({ x, y, lastMovedAt: new Date() })
+      const [movedHouse] = await db.update(houses)
+        .set({ x, y, expansion: newExpansion, lastMovedAt: new Date() })
         .where(eq(houses.userId, userId))
         .returning();
-      return house;
+      return movedHouse;
     } catch (error: any) {
       if (error.code === '23505') {
         throw new Error("DUPLICATE_ENTRY");
