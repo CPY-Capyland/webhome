@@ -29,7 +29,6 @@ interface House {
   isCurrentUser?: boolean;
   username: string;
   color: string;
-  size: number;
   expansionUnits: number;
   expansion: { x: number; y: number }[];
 }
@@ -109,14 +108,9 @@ export default function GridCanvas({
   const cellSize = BASE_CELL_SIZE * zoom;
 
   const housesMap = new Map(houses.flatMap((h) => {
-    const cells: [string, any][] = [];
-    for (let i = 0; i < h.size; i++) {
-      for (let j = 0; j < h.size; j++) {
-        cells.push([`${h.x + i},${h.y + j}`, { ...h, isMain: i === 0 && j === 0 }]);
-      }
-    }
+    const mainHouse: [string, any] = [`${h.x},${h.y}`, { ...h, isMain: true }];
     const expansion: [string, any][] = h.expansion?.map(exp => [`${exp.x},${exp.y}`, { ...h, isMain: false }]) || [];
-    return [...cells, ...expansion];
+    return [mainHouse, ...expansion];
   }));
 
   useEffect(() => {

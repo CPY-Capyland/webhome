@@ -188,22 +188,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Solde insuffisant" });
       }
 
-      const allHouses = await storage.getAllHouses();
-      const newSize = userHouse.size + 1;
-      const newHouse = { ...userHouse, size: newSize };
-
-      for (const house of allHouses) {
-        if (house.userId === userId) continue;
-
-        const dx = Math.abs(newHouse.x - house.x);
-        const dy = Math.abs(newHouse.y - house.y);
-
-        if (dx < (newHouse.size + house.size) / 2 && dy < (newHouse.size + house.size) / 2) {
-          return res.status(400).json({ error: "L'extension entre en collision avec une autre maison" });
-        }
-      }
-
-      const upgradedHouse = await storage.upgradeHouse(userId, newSize, upgradeCost);
+      const upgradedHouse = await storage.upgradeHouse(userId, userHouse.size + 1, upgradeCost);
       res.json(upgradedHouse);
     } catch (error) {
       console.error("Error upgrading house:", error);

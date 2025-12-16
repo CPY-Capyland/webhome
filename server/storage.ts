@@ -164,12 +164,20 @@ export class DatabaseStorage implements IStorage {
         throw new Error("User not found");
       }
 
+      const [house] = await tx.select().from(houses).where(eq(houses.userId, userId));
+      if (!house) {
+        throw new Error("House not found");
+      }
+
       await tx.update(users)
         .set({ balance: user.balance - upgradeCost })
         .where(eq(users.id, userId));
 
       const [upgradedHouse] = await tx.update(houses)
-        .set({ size: newSize })
+        .set({ 
+          size: newSize,
+          expansionUnits: house.expansionUnits + 3,
+        })
         .where(eq(houses.userId, userId))
         .returning();
 
