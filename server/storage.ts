@@ -238,10 +238,17 @@ export class DatabaseStorage implements IStorage {
         throw new Error("House not found");
       }
 
+      const totalOwnedExpansions = (house.size - 1) * 3;
+      const newExpansionUnits = totalOwnedExpansions - cells.length;
+
+      if (newExpansionUnits < 0) {
+        throw new Error("Invalid expansion data");
+      }
+
       const [expandedHouse] = await tx.update(houses)
         .set({
-          expansion: sql`${houses.expansion} || ${JSON.stringify(cells)}::jsonb`,
-          expansionUnits: house.expansionUnits - cells.length,
+          expansion: cells,
+          expansionUnits: newExpansionUnits,
         })
         .where(eq(houses.userId, userId))
         .returning();

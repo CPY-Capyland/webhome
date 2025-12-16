@@ -156,6 +156,12 @@ export default function GridCanvas({
     }
   };
 
+  useEffect(() => {
+    if (isUpgradeMode && userHouse) {
+      setExpansionCells(userHouse.expansion || []);
+    }
+  }, [isUpgradeMode]);
+
   const handleTouchMove = (e: React.TouchEvent) => {
     e.preventDefault();
     if (e.touches.length === 2 && pinchStartDistanceRef.current) {
@@ -313,14 +319,20 @@ export default function GridCanvas({
     const gridY = Math.floor((mouseY - offset.y) / cellSize);
 
     if (isUpgradeMode) {
-      if (userHouse && userHouse.expansionUnits > expansionCells.length) {
-        setExpansionCells((prev) => {
-          const existing = prev.find((c) => c.x === gridX && c.y === gridY);
-          if (existing) {
-            return prev.filter((c) => c.x !== gridX || c.y !== gridY);
-          }
-          return [...prev, { x: gridX, y: gridY }];
-        });
+      const existing = expansionCells.find((c) => c.x === gridX && c.y === gridY);
+      if (existing) {
+        setExpansionCells((prev) => prev.filter((c) => c.x !== gridX || c.y !== gridY));
+      } else {
+        const totalOwned = (userHouse?.size - 1) * 3;
+        if (expansionCells.length < totalOwned) {
+          setExpansionCells((prev) => [...prev, { x: gridX, y: gridY }]);
+        } else {
+          toast({
+            title: "Limite atteinte",
+            description: "Vous avez utilisé toutes vos unités d'extension.",
+            variant: "destructive",
+          });
+        }
       }
       return;
     }
@@ -330,7 +342,6 @@ export default function GridCanvas({
       setIsHouseMenuOpen(true);
       return;
     }
-
     if (
       gridX >= 0 &&
       gridX < GRID_SIZE &&
