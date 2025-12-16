@@ -249,8 +249,19 @@ const AdminApp = () => {
   );
 };
 
+import { queryClient, QueryClientProvider } from '@/lib/queryClient';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+
+// ... (rest of the AdminApp component)
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AdminApp />
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <AdminApp />
+      </TooltipProvider>
+    </QueryClientProvider>
   </React.StrictMode>,
 );
