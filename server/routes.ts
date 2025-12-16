@@ -680,7 +680,7 @@ Les maisons doivent générer au moins 30% de leurs besoins énergétiques à pa
   });
 
   // Serve admin panel HTML
-  app.get("/admin", ensureAdmin, (req: Request, res: Response) => {
+  app.get("/admin", (req: Request, res: Response) => {
     res.sendFile("admin.html", { root: "./client" });
   });
 
