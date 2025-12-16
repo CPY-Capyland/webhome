@@ -361,6 +361,7 @@ export async function registerRoutes(
           color: house.color,
           size: house.size,
           expansionUnits: house.expansionUnits,
+          expansion: house.expansion,
           lastMovedAt: house.lastMovedAt,
           canMove: canMoveHouse(house.lastMovedAt),
         } : null,

@@ -12,6 +12,8 @@ interface UserStatus {
     y: number;
     size: number;
     color: string;
+    expansionUnits: number;
+    expansion: { x: number, y: number }[];
     lastMovedAt: string;
     canMove: boolean;
   } | null;

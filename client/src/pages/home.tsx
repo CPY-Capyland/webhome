@@ -186,6 +186,8 @@ export default function Home() {
     username: user.username,
     isCurrentUser: true,
     color: userStatus.house.color,
+    expansion: userStatus.house.expansion || [],
+    expansionUnits: userStatus.house.expansionUnits,
     lastColorChangedAt: new Date(), // This is not available here
     placedAt: new Date(), // This is not available here
     lastMovedAt: new Date(userStatus.house.lastMovedAt),
