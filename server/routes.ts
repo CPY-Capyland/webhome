@@ -52,10 +52,32 @@ function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
   res.status(401).json({ error: "Unauthorized" });
 }
 
+function ensureAdmin(req: Request, res: Response, next: NextFunction) {
+  if (req.session?.isAdmin) {
+    return next();
+  }
+  res.status(401).json({ error: "Unauthorized" });
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Admin login
+  app.post("/api/admin/login", (req: Request, res: Response) => {
+    const { username, password } = req.body;
+    if (username === process.env.ADMIN_LOGIN && password === process.env.ADMIN_PWD) {
+      req.session.isAdmin = true;
+      return res.json({ message: "Admin login successful" });
+    }
+    res.status(401).json({ error: "Invalid credentials" });
+  });
+
+  // Admin logout
+  app.post("/api/admin/logout", ensureAdmin, (req: Request, res: Response) => {
+    req.session.isAdmin = false;
+    res.json({ message: "Admin logout successful" });
+  });
   
   // Get all houses
   app.get("/api/houses", async (req: Request, res: Response) => {
@@ -611,20 +633,55 @@ Les maisons doivent générer au moins 30% de leurs besoins énergétiques à pa
     }
   });
 
-  app.get("/api/admin/fix-expansion-units/:secret_key", async (req: Request, res: Response) => {
+  // Admin status check
+  app.get("/api/admin/status", (req: Request, res: Response) => {
+    res.json({ isAdmin: req.session?.isAdmin || false });
+  });
+
+  // Admin - Get all users with their houses
+  app.get("/api/admin/users", ensureAdmin, async (req: Request, res: Response) => {
     try {
-      // This is a temporary secret key. In a real application, this should be a proper authentication system.
-      const SECRET_KEY = "f8a4b8be-aa13-4a9d-e55a-f8a3402560d4";
-      if (req.params.secret_key !== SECRET_KEY) {
-        return res.status(401).json({ error: "Unauthorized" });
+      const users = await storage.getAllUsersWithHouses();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      res.status(500).json({ error: "Échec de la récupération des utilisateurs" });
+    }
+  });
+
+  // Admin - Get all jobs
+  app.get("/api/admin/jobs", ensureAdmin, async (req: Request, res: Response) => {
+    try {
+      const jobs = await storage.getAllJobs();
+      res.json(jobs);
+    } catch (error) {
+      console.error("Error fetching all jobs:", error);
+      res.status(500).json({ error: "Échec de la récupération des métiers" });
+    }
+  });
+
+  // Admin - Update job
+  app.put("/api/admin/jobs/:id", ensureAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { name, grossSalary, fees, justification } = req.body;
+
+      // Basic validation
+      if (!name || typeof grossSalary !== 'number' || typeof fees !== 'number' || !justification) {
+        return res.status(400).json({ error: "Données de métier invalides" });
       }
 
-      await storage.fixExpansionUnits();
-      res.json({ message: "Expansion units fixed successfully." });
+      const updatedJob = await storage.updateJob(id, name, grossSalary, fees, justification);
+      res.json(updatedJob);
     } catch (error) {
-      console.error("Error fixing expansion units:", error);
-      res.status(500).json({ error: "Failed to fix expansion units." });
+      console.error("Error updating job:", error);
+      res.status(500).json({ error: "Échec de la mise à jour du métier" });
     }
+  });
+
+  // Serve admin panel HTML
+  app.get("/admin", ensureAdmin, (req: Request, res: Response) => {
+    res.sendFile("admin.html", { root: "./client" });
   });
 
   return httpServer;

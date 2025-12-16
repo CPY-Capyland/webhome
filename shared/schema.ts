@@ -207,3 +207,7 @@ export type LawWithVotes = Law & {
   isInTiebreak?: boolean;
   publisherName?: string;
 };
+
+export type UserWithHouse = User & {
+  house: House | null;
+};

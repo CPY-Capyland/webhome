@@ -49,6 +49,7 @@ export interface IStorage {
   // Jobs
   getJob(jobId: string): Promise<Job | undefined>;
   getAllJobs(): Promise<any[]>;
+  updateJob(jobId: string, name: string, grossSalary: number, fees: number, justification: string): Promise<Job>;
   updateUserJob(userId: string, jobId: string): Promise<User>;
   getUsersWithJobs(): Promise<any[]>;
   updateUserLastPaidAt(userId: string): Promise<User>;
@@ -65,6 +66,7 @@ export interface IStorage {
 
   // Admin
   fixExpansionUnits(): Promise<void>;
+  getAllUsersWithHouses(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -411,6 +413,14 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateJob(jobId: string, name: string, grossSalary: number, fees: number, justification: string): Promise<Job> {
+    const [updatedJob] = await db.update(jobs)
+      .set({ name, grossSalary, fees, justification })
+      .where(eq(jobs.id, jobId))
+      .returning();
+    return updatedJob;
+  }
+
   async updateUserBonus(userId: string, bonus: number): Promise<User> {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     if (!user) {
@@ -529,6 +539,15 @@ export class DatabaseStorage implements IStorage {
     }
 
     console.log("Finished fixing expansion units.");
+  }
+
+  async getAllUsersWithHouses(): Promise<any[]> {
+    return db.select({
+      user: users,
+      house: houses,
+    })
+    .from(users)
+    .leftJoin(houses, eq(users.id, houses.userId));
   }
 }
 
