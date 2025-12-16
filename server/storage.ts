@@ -28,6 +28,7 @@ export interface IStorage {
   moveHouse(userId: string, x: number, y: number): Promise<House>;
   updateHouseColor(userId: string, color: string): Promise<House>;
   upgradeHouse(userId: string, newSize: number, upgradeCost: number): Promise<House>;
+  expandHouse(userId: string, cells: { x: number, y: number }[]): Promise<House>;
   
   // Laws
   getLaw(id: string): Promise<Law | undefined>;
@@ -99,6 +100,9 @@ export class DatabaseStorage implements IStorage {
       userId: houses.userId,
       x: houses.x,
       y: houses.y,
+      size: houses.size,
+      expansionUnits: houses.expansionUnits,
+      expansion: houses.expansion,
       placedAt: houses.placedAt,
       lastMovedAt: houses.lastMovedAt,
       lastColorChangedAt: houses.lastColorChangedAt,
@@ -170,6 +174,25 @@ export class DatabaseStorage implements IStorage {
         .returning();
 
       return upgradedHouse;
+    });
+  }
+
+  async expandHouse(userId: string, cells: { x: number, y: number }[]): Promise<House> {
+    return db.transaction(async (tx) => {
+      const [house] = await tx.select().from(houses).where(eq(houses.userId, userId));
+      if (!house) {
+        throw new Error("House not found");
+      }
+
+      const [expandedHouse] = await tx.update(houses)
+        .set({
+          expansion: sql`${houses.expansion} || ${JSON.stringify(cells)}::jsonb`,
+          expansionUnits: house.expansionUnits - cells.length,
+        })
+        .where(eq(houses.userId, userId))
+        .returning();
+
+      return expandedHouse;
     });
   }
 

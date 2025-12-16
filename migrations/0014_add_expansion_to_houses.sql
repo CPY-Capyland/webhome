@@ -1,0 +1,1 @@
+ALTER TABLE "houses" ADD COLUMN "expansion" jsonb DEFAULT '[]' NOT NULL;

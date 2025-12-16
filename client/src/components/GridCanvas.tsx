@@ -14,7 +14,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
 const GRID_SIZE = 500;
 const BASE_CELL_SIZE = 16;
@@ -29,6 +30,7 @@ interface House {
   username: string;
   color: string;
   expansionUnits: number;
+  expansion: { x: number; y: number }[];
 }
 
 interface GridCanvasProps {
@@ -75,10 +77,41 @@ export default function GridCanvas({
   const [isHouseMenuOpen, setIsHouseMenuOpen] = useState(false);
   const [expansionCells, setExpansionCells] = useState<{ x: number; y: number }[]>([]);
   const pinchStartDistanceRef = useRef<number | null>(null);
+  const queryClient = useQueryClient();
+
+  const expandHouseMutation = useMutation({
+    mutationFn: (cells: { x: number; y: number }[]) =>
+      fetch("/api/houses/expand", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cells }),
+      }).then((res) => {
+        if (!res.ok) throw new Error("Failed to expand house");
+        return res.json();
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["houses"] });
+      toast({ title: "Maison agrandie avec succès!" });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur lors de l'agrandissement",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      onManageUpgrades();
+    },
+  });
 
   const cellSize = BASE_CELL_SIZE * zoom;
 
-  const housesMap = new Map(houses.map((h) => [`${h.x},${h.y}`, h]));
+  const housesMap = new Map(houses.flatMap((h) => {
+    const mainHouse: [string, House] = [`${h.x},${h.y}`, { ...h, isMain: true }];
+    const expansion: [string, House][] = h.expansion?.map(exp => [`${exp.x},${exp.y}`, { ...h, isMain: false }]) || [];
+    return [mainHouse, ...expansion];
+  }));
 
   useEffect(() => {
     if (selectedUserHouse && canvasRef.current) {
@@ -538,7 +571,7 @@ export default function GridCanvas({
           <div className="bg-card border border-card-border px-3 py-1.5 rounded-md text-sm">
             <p>Unités d'amélioration restantes : {userHouse?.expansionUnits - expansionCells.length}</p>
           </div>
-          <Button onClick={() => console.log("confirm upgrades")}>Valider</Button>
+          <Button onClick={() => expandHouseMutation.mutate(expansionCells)} disabled={expandHouseMutation.isPending}>Valider</Button>
           <Button variant="secondary" onClick={onManageUpgrades}>Annuler</Button>
         </div>
       )}

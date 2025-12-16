@@ -211,6 +211,44 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/houses/expand", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const { cells } = req.body;
+
+      if (!Array.isArray(cells) || cells.some(c => typeof c.x !== 'number' || typeof c.y !== 'number')) {
+        return res.status(400).json({ error: "Cellules d'expansion invalides" });
+      }
+
+      const userHouse = await storage.getHouse(userId);
+      if (!userHouse) {
+        return res.status(404).json({ error: "Maison non trouvée" });
+      }
+
+      if (cells.length > userHouse.expansionUnits) {
+        return res.status(400).json({ error: "Unités d'expansion insuffisantes" });
+      }
+
+      const allHouses = await storage.getAllHouses();
+      const existingCells = new Set(allHouses.flatMap(h => [
+        `${h.x},${h.y}`,
+        ...(h.expansion || []).map(e => `${e.x},${e.y}`)
+      ]));
+
+      for (const cell of cells) {
+        if (existingCells.has(`${cell.x},${cell.y}`)) {
+          return res.status(400).json({ error: `La cellule (${cell.x}, ${cell.y}) est déjà occupée` });
+        }
+      }
+
+      const expandedHouse = await storage.expandHouse(userId, cells);
+      res.json(expandedHouse);
+    } catch (error) {
+      console.error("Error expanding house:", error);
+      res.status(500).json({ error: "Échec de l'agrandissement de la maison" });
+    }
+  });
+
   // Get all laws with vote counts
   app.get("/api/laws", async (req: Request, res: Response) => {
     try {
