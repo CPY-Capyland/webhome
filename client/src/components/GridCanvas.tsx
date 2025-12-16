@@ -29,6 +29,7 @@ interface House {
   isCurrentUser?: boolean;
   username: string;
   color: string;
+  size: number;
   expansionUnits: number;
   expansion: { x: number; y: number }[];
 }
@@ -72,7 +73,7 @@ export default function GridCanvas({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: House } | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: any } | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
   const [isHouseMenuOpen, setIsHouseMenuOpen] = useState(false);
   const [expansionCells, setExpansionCells] = useState<{ x: number; y: number }[]>([]);
@@ -108,9 +109,14 @@ export default function GridCanvas({
   const cellSize = BASE_CELL_SIZE * zoom;
 
   const housesMap = new Map(houses.flatMap((h) => {
-    const mainHouse: [string, House] = [`${h.x},${h.y}`, { ...h, isMain: true }];
-    const expansion: [string, House][] = h.expansion?.map(exp => [`${exp.x},${exp.y}`, { ...h, isMain: false }]) || [];
-    return [mainHouse, ...expansion];
+    const cells: [string, any][] = [];
+    for (let i = 0; i < h.size; i++) {
+      for (let j = 0; j < h.size; j++) {
+        cells.push([`${h.x + i},${h.y + j}`, { ...h, isMain: i === 0 && j === 0 }]);
+      }
+    }
+    const expansion: [string, any][] = h.expansion?.map(exp => [`${exp.x},${exp.y}`, { ...h, isMain: false }]) || [];
+    return [...cells, ...expansion];
   }));
 
   useEffect(() => {
@@ -216,17 +222,25 @@ export default function GridCanvas({
           } else {
             ctx.fillStyle = house.color;
           }
-          ctx.beginPath();
-          const cx = screenX + cellSize / 2;
-          const cy = screenY + cellSize / 2;
-          const size = cellSize * 0.6;
-          ctx.moveTo(cx, cy - size / 2);
-          ctx.lineTo(cx + size / 2, cy);
-          ctx.lineTo(cx + size / 2, cy + size / 3);
-          ctx.lineTo(cx - size / 2, cy + size / 3);
-          ctx.lineTo(cx - size / 2, cy);
-          ctx.closePath();
-          ctx.fill();
+          ctx.fillRect(screenX, screenY, cellSize, cellSize);
+          
+          if(house.isMain) {
+            ctx.fillStyle = isDark ? "hsl(217, 91%, 65%)" : "hsl(217, 91%, 55%)";
+            if(!house.isCurrentUser) {
+              ctx.fillStyle = isDark ? "white" : "black";
+            }
+            ctx.beginPath();
+            const cx = screenX + cellSize / 2;
+            const cy = screenY + cellSize / 2;
+            const iconSize = cellSize * 0.6;
+            ctx.moveTo(cx, cy - iconSize / 2);
+            ctx.lineTo(cx + iconSize / 2, cy);
+            ctx.lineTo(cx + iconSize / 2, cy + iconSize / 3);
+            ctx.lineTo(cx - iconSize / 2, cy + iconSize / 3);
+            ctx.lineTo(cx - iconSize / 2, cy);
+            ctx.closePath();
+            ctx.fill();
+          }
         }
         if (
           hoveredCell &&

@@ -412,9 +412,10 @@ export class DatabaseStorage implements IStorage {
 
   async payAllSalaries(): Promise<void> {
     const usersWithJobs = await this.getUsersWithJobs();
+    console.log(`Paying salaries for ${usersWithJobs.length} users.`);
     for (const { user, job } of usersWithJobs) {
       await db.transaction(async (tx) => {
-        const salary = job.grossSalary + job.fees + user.bonus;
+        const salary = job.grossSalary - job.fees + user.bonus;
         await tx.update(users)
           .set({
             balance: user.balance + salary,
