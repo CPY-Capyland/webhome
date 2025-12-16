@@ -169,6 +169,8 @@ export class DatabaseStorage implements IStorage {
         throw new Error("House not found");
       }
 
+      console.log(`Upgrading house for user ${userId}. Current expansion units: ${house.expansionUnits}`);
+
       await tx.update(users)
         .set({ balance: user.balance - upgradeCost })
         .where(eq(users.id, userId));
@@ -180,6 +182,8 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(houses.userId, userId))
         .returning();
+
+      console.log(`House upgraded for user ${userId}. New expansion units: ${upgradedHouse.expansionUnits}`);
 
       return upgradedHouse;
     });
