@@ -611,5 +611,21 @@ Les maisons doivent générer au moins 30% de leurs besoins énergétiques à pa
     }
   });
 
+  app.get("/api/admin/fix-expansion-units/:secret_key", async (req: Request, res: Response) => {
+    try {
+      // This is a temporary secret key. In a real application, this should be a proper authentication system.
+      const SECRET_KEY = "f8a4b8be-aa13-4a9d-e55a-f8a3402560d4";
+      if (req.params.secret_key !== SECRET_KEY) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      await storage.fixExpansionUnits();
+      res.json({ message: "Expansion units fixed successfully." });
+    } catch (error) {
+      console.error("Error fixing expansion units:", error);
+      res.status(500).json({ error: "Failed to fix expansion units." });
+    }
+  });
+
   return httpServer;
 }

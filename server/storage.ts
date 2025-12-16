@@ -62,6 +62,9 @@ export interface IStorage {
   getCurrentElection(): Promise<Election | undefined>;
   createElection(election: InsertElection): Promise<Election>;
   createCandidate(candidate: InsertCandidate): Promise<Candidate>;
+
+  // Admin
+  fixExpansionUnits(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -498,6 +501,34 @@ export class DatabaseStorage implements IStorage {
   async createCandidate(candidate: InsertCandidate): Promise<Candidate> {
     const [newCandidate] = await db.insert(candidates).values(candidate).returning();
     return newCandidate;
+  }
+
+  // Admin
+  async fixExpansionUnits(): Promise<void> {
+    console.log("Starting to fix expansion units...");
+
+    const allHouses = await db.select().from(houses);
+
+    for (const house of allHouses) {
+      const correctExpansionUnits = (house.size - 1) * 3;
+      const currentExpansionUnits = (house.expansion as any[]).length;
+      const availableExpansionUnits = correctExpansionUnits - currentExpansionUnits;
+
+      if (house.expansionUnits !== availableExpansionUnits) {
+        console.log(`Fixing house ${house.id} for user ${house.userId}.`);
+        console.log(`  Size: ${house.size}`);
+        console.log(`  Correct total units: ${correctExpansionUnits}`);
+        console.log(`  Current placed units: ${currentExpansionUnits}`);
+        console.log(`  Current available units in DB: ${house.expansionUnits}`);
+        console.log(`  Setting available units to: ${availableExpansionUnits}`);
+        
+        await db.update(houses)
+          .set({ expansionUnits: availableExpansionUnits })
+          .where(eq(houses.id, house.id));
+      }
+    }
+
+    console.log("Finished fixing expansion units.");
   }
 }
 
