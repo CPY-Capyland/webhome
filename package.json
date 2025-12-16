@@ -10,6 +10,7 @@
     "check": "tsc",
     "db:generate": "drizzle-kit generate",
     "db:seed-jobs": "tsx script/seed-jobs.ts",
+    "db:fix-expansion-units": "tsx script/fix-expansion-units.ts",
     "postbuild": "tsx script/run-patch-migrations.ts",
     "clear-laws": "tsx script/clear-laws.ts"
   },
