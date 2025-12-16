@@ -219,20 +219,10 @@ export default function GridCanvas({
           ctx.fillRect(screenX, screenY, cellSize, cellSize);
           
           if(house.isMain) {
-            ctx.fillStyle = isDark ? "hsl(217, 91%, 65%)" : "hsl(217, 91%, 55%)";
-            if(!house.isCurrentUser) {
-              ctx.fillStyle = isDark ? "white" : "black";
-            }
+            // Draw an icon to distinguish the main house cell
+            ctx.fillStyle = "rgba(255, 255, 255, 0.5)"; // A semi-transparent white dot
             ctx.beginPath();
-            const cx = screenX + cellSize / 2;
-            const cy = screenY + cellSize / 2;
-            const iconSize = cellSize * 0.6;
-            ctx.moveTo(cx, cy - iconSize / 2);
-            ctx.lineTo(cx + iconSize / 2, cy);
-            ctx.lineTo(cx + iconSize / 2, cy + iconSize / 3);
-            ctx.lineTo(cx - iconSize / 2, cy + iconSize / 3);
-            ctx.lineTo(cx - iconSize / 2, cy);
-            ctx.closePath();
+            ctx.arc(screenX + cellSize / 2, screenY + cellSize / 2, cellSize * 0.2, 0, 2 * Math.PI);
             ctx.fill();
           }
         }
