@@ -49,6 +49,8 @@ interface GridCanvasProps {
   userHasNoHouse: boolean;
   setIsPlacementModalOpen: (isOpen: boolean) => void;
   setPlacementCoords: (coords: { x: number; y: number } | null) => void;
+  isHouseMenuOpen: boolean;
+  setIsHouseMenuOpen: (isOpen: boolean) => void;
 }
 
 export default function GridCanvas({
@@ -66,6 +68,8 @@ export default function GridCanvas({
   userHasNoHouse,
   setIsPlacementModalOpen,
   setPlacementCoords,
+  isHouseMenuOpen,
+  setIsHouseMenuOpen,
 }: GridCanvasProps) {
   const { ref: containerRef, entry: containerEntry } = useResizeObserver<HTMLDivElement>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,7 +79,6 @@ export default function GridCanvas({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; house?: any } | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
-  const [isHouseMenuOpen, setIsHouseMenuOpen] = useState(false);
   const [expansionCells, setExpansionCells] = useState<{ x: number; y: number }[]>([]);
   const pinchStartDistanceRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
@@ -109,12 +112,8 @@ export default function GridCanvas({
   const cellSize = BASE_CELL_SIZE * zoom;
 
   const housesMap = new Map(houses.flatMap((h) => {
-    const cells: [string, any][] = [];
-    for (let i = 0; i < h.size; i++) {
-      for (let j = 0; j < h.size; j++) {
-        cells.push([`${h.x + i},${h.y + j}`, { ...h, isMain: i === 0 && j === 0 }]);
-      }
-    }
+    // Always render main house as 1x1, size is just a level indicator
+    const cells: [string, any][] = [[`${h.x},${h.y}`, { ...h, isMain: true }]];
     const expansion: [string, any][] = h.expansion?.map(exp => [`${exp.x},${exp.y}`, { ...h, isMain: false }]) || [];
     return [...cells, ...expansion];
   }));

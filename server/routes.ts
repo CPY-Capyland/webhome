@@ -133,7 +133,7 @@ export async function registerRoutes(
       const allHouses = await storage.getAllHouses();
       const occupiedCells = new Set(
         allHouses.flatMap(h => [
-          ...Array.from({ length: h.size * h.size }, (_, i) => `${h.x + Math.floor(i / h.size)},${h.y + (i % h.size)}`),
+          `${h.x},${h.y}`, // Always 1x1
           ...(h.expansion as { x: number; y: number }[]).map(cell => `${cell.x},${cell.y}`),
         ])
       );
@@ -247,9 +247,11 @@ export async function registerRoutes(
       }
 
       const allHouses = await storage.getAllHouses();
-      const existingCells = new Set(allHouses.flatMap(h => [
-        `${h.x},${h.y}`,
-        ...(h.expansion || []).map(e => `${e.x},${e.y}`)
+      const existingCells = new Set(allHouses
+        .filter(h => h.userId !== userId)
+        .flatMap(h => [
+          `${h.x},${h.y}`,
+          ...(h.expansion || []).map(e => `${e.x},${e.y}`)
       ]));
 
       for (const cell of cells) {

@@ -34,6 +34,7 @@ export default function Home() {
   const [selectedUserHouse, setSelectedUserHouse] = useState<HouseWithUser | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
+  const [isHouseMenuOpen, setIsHouseMenuOpen] = useState(false);
 
 
   // Fetch current user
@@ -271,6 +272,7 @@ export default function Home() {
           totalHouses={houses.length}
           gridSize={500}
           showMenuButton={false} // No menu button in this new layout
+          onOpenHouseMenu={() => setIsHouseMenuOpen(true)}
         />
 
         <div className="flex-1 flex flex-row">
@@ -309,6 +311,8 @@ export default function Home() {
                   setSelectedCell={setSelectedCell}
                   setIsPlacementModalOpen={setIsPlacementModalOpen}
                   setPlacementCoords={setPlacementCoords}
+                  isHouseMenuOpen={isHouseMenuOpen}
+                  setIsHouseMenuOpen={setIsHouseMenuOpen}
                 />
               </div>
               <div>

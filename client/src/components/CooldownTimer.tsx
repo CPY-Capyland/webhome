@@ -11,12 +11,14 @@ interface CooldownTimerProps {
   lastMoveTime: Date | null;
   cooldownHours?: number;
   houseLocation?: { x: number; y: number } | null;
+  onOpenHouseMenu?: () => void;
 }
 
 export default function CooldownTimer({
   lastMoveTime,
   cooldownHours = 24,
   houseLocation,
+  onOpenHouseMenu,
 }: CooldownTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState<string>("");
   const [canMove, setCanMove] = useState(true);
@@ -82,7 +84,7 @@ export default function CooldownTimer({
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant="default" className="gap-1.5" data-testid="badge-can-move">
+          <Badge variant="default" className="gap-1.5 cursor-pointer" onClick={onOpenHouseMenu} data-testid="badge-can-move">
             <MapPin className="h-3 w-3" />
             <span>
               ({houseLocation.x}, {houseLocation.y})
@@ -97,7 +99,7 @@ export default function CooldownTimer({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge variant="secondary" className="gap-1.5" data-testid="badge-cooldown">
+        <Badge variant="secondary" className="gap-1.5 cursor-pointer" onClick={onOpenHouseMenu} data-testid="badge-cooldown">
           <Clock className="h-3 w-3" />
           <span>{timeRemaining}</span>
         </Badge>

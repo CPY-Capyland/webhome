@@ -145,41 +145,35 @@ export class DatabaseStorage implements IStorage {
       throw new Error("House not found");
     }
 
-    const dx = x - house.x;
-    const dy = y - house.y;
-
-    const newExpansion = (house.expansion as { x: number; y: number }[]).map(cell => ({
-      x: cell.x + dx,
-      y: cell.y + dy,
-    }));
-
-    const allNewCells = [
-      ...Array.from({ length: house.size * house.size }, (_, i) => ({
-        x: x + Math.floor(i / house.size),
-        y: y + (i % house.size),
-      })),
-      ...newExpansion,
-    ];
+    // Reset expansions when moving
+    const newExpansion: { x: number; y: number }[] = [];
+    const totalOwned = (house.size - 1) * 3;
+    const newExpansionUnits = totalOwned;
 
     const allHouses = await this.getAllHouses();
     const otherOccupiedCells = new Set(
       allHouses
         .filter(h => h.userId !== userId)
         .flatMap(h => [
-          ...Array.from({ length: h.size * h.size }, (_, i) => `${h.x + Math.floor(i / h.size)},${h.y + (i % h.size)}`),
+          // House is always 1x1 regardless of level (size)
+          `${h.x},${h.y}`,
           ...(h.expansion as { x: number; y: number }[]).map(cell => `${cell.x},${cell.y}`),
         ])
     );
 
-    for (const cell of allNewCells) {
-      if (otherOccupiedCells.has(`${cell.x},${cell.y}`)) {
-        throw new Error(`La cellule (${cell.x}, ${cell.y}) est déjà occupée`);
-      }
+    if (otherOccupiedCells.has(`${x},${y}`)) {
+      throw new Error(`La cellule (${x}, ${y}) est déjà occupée`);
     }
 
     try {
       const [movedHouse] = await db.update(houses)
-        .set({ x, y, expansion: newExpansion, lastMovedAt: new Date() })
+        .set({ 
+          x, 
+          y, 
+          expansion: newExpansion, 
+          expansionUnits: newExpansionUnits,
+          lastMovedAt: new Date() 
+        })
         .where(eq(houses.userId, userId))
         .returning();
       return movedHouse;

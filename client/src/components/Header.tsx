@@ -20,6 +20,7 @@ interface HeaderProps {
   gridSize: number;
   onMenuClick?: () => void;
   showMenuButton?: boolean;
+  onOpenHouseMenu?: () => void;
 }
 
 export default function Header({
@@ -30,6 +31,7 @@ export default function Header({
   gridSize,
   onMenuClick,
   showMenuButton,
+  onOpenHouseMenu,
 }: HeaderProps) {
   const [isDark, setIsDark] = useState(false);
 
@@ -76,6 +78,7 @@ export default function Header({
         <CooldownTimer
           lastMoveTime={lastMoveTime}
           houseLocation={houseLocation}
+          onOpenHouseMenu={onOpenHouseMenu}
         />
 
         <Button
