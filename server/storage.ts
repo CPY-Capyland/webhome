@@ -1,5 +1,5 @@
 import { 
-  users, houses, laws, votes, suggestions, jobs, elections, candidates,
+  users, houses, laws, votes, suggestions, jobs, elections, candidates, electionVotes,
   type User, type InsertUser,
   type House, type InsertHouse,
   type Law, type InsertLaw,
@@ -11,7 +11,7 @@ import {
   type LawWithVotes
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, or, isNull, lt } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -36,6 +36,7 @@ export interface IStorage {
   getLawsWithVotes(userId?: string): Promise<LawWithVotes[]>;
   createLaw(law: InsertLaw, userId: string): Promise<Law>;
   closeLawVoting(id: string): Promise<void>;
+  checkAndCloseLaws(): Promise<void>;
   
   // Votes
   getVote(lawId: string, userId: string): Promise<Vote | undefined>;
@@ -63,11 +64,17 @@ export interface IStorage {
   getCurrentElection(): Promise<Election | undefined>;
   createElection(election: InsertElection): Promise<Election>;
   createCandidate(candidate: InsertCandidate): Promise<Candidate>;
+  checkAndAdvanceElections(): Promise<void>;
 
   // Admin
   fixExpansionUnits(): Promise<void>;
   getAllUsersWithHouses(): Promise<any[]>;
 }
+
+export type HouseWithUser = House & { 
+  isCurrentUser?: boolean;
+  username: string;
+};
 
 export class DatabaseStorage implements IStorage {
   // Users
@@ -261,10 +268,56 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(laws);
   }
 
+  async checkAndCloseLaws(): Promise<void> {
+    const VOTING_DELAY_MS = 24 * 60 * 60 * 1000;
+    const VOTING_DURATION_MS = 168 * 60 * 60 * 1000;
+    const now = new Date();
+
+    const activeLaws = await db.select().from(laws).where(
+      and(eq(laws.status, "active"), isNull(laws.votingClosedAt))
+    );
+
+    for (const law of activeLaws) {
+      const votingStart = new Date(law.publishedAt.getTime() + VOTING_DELAY_MS);
+      const votingEnd = new Date(votingStart.getTime() + VOTING_DURATION_MS);
+
+      if (now >= votingEnd) {
+        const lawVotes = await db.select().from(votes).where(eq(votes.lawId, law.id));
+        const upvotes = lawVotes.filter(v => v.vote === "up").length;
+        const downvotes = lawVotes.filter(v => v.vote === "down").length;
+
+        let newStatus: "passed" | "rejected" | "pending" = "pending";
+        let newIsInTiebreak = false;
+
+        if (upvotes > downvotes) {
+          newStatus = "passed";
+        } else if (downvotes > upvotes) {
+          newStatus = "rejected";
+        } else {
+          newStatus = "pending";
+          newIsInTiebreak = true;
+        }
+
+        await db.update(laws)
+          .set({
+            status: newStatus,
+            isInTiebreak: newIsInTiebreak,
+            votingClosedAt: now,
+          })
+          .where(eq(laws.id, law.id));
+        
+        console.log(`Law ${law.id} closed with status ${newStatus}`);
+      }
+    }
+  }
+
   async getLawsWithVotes(userId?: string): Promise<LawWithVotes[]> {
     const VOTING_DELAY_MS = 24 * 60 * 60 * 1000;
     const VOTING_DURATION_MS = 168 * 60 * 60 * 1000;
     
+    // Automatic check when browsing
+    await this.checkAndCloseLaws();
+
     const allLaws = await db.select({
       law: laws,
       publisher: users,
@@ -272,44 +325,6 @@ export class DatabaseStorage implements IStorage {
 
     const allVotes = await db.select().from(votes);
 
-    for (const { law, publisher } of allLaws) {
-      if (law.status === "active" && !law.votingClosedAt) {
-        const votingStart = new Date(law.publishedAt.getTime() + VOTING_DELAY_MS);
-        const votingEnd = new Date(votingStart.getTime() + VOTING_DURATION_MS);
-        const now = new Date();
-
-        if (now >= votingEnd) {
-          const lawVotes = allVotes.filter(v => v.lawId === law.id);
-          const upvotes = lawVotes.filter(v => v.vote === "up").length;
-          const downvotes = lawVotes.filter(v => v.vote === "down").length;
-
-          let newStatus: "passed" | "rejected" | "pending" = "pending";
-          let newIsInTiebreak = false;
-
-          if (upvotes > downvotes) {
-            newStatus = "passed";
-          } else if (downvotes > upvotes) {
-            newStatus = "rejected";
-          } else {
-            newStatus = "pending";
-            newIsInTiebreak = true;
-          }
-
-          await db.update(laws)
-            .set({
-              status: newStatus,
-              isInTiebreak: newIsInTiebreak,
-              votingClosedAt: now,
-            })
-            .where(eq(laws.id, law.id));
-          
-          law.status = newStatus;
-          law.isInTiebreak = newIsInTiebreak;
-          law.votingClosedAt = now;
-        }
-      }
-    }
-    
     const lawsWithVotes = allLaws
       .filter(({ law }) => law.userId)
       .map(({ law, publisher }) => {
@@ -474,16 +489,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async payAllSalaries(): Promise<void> {
-    const usersWithJobs = await this.getUsersWithJobs();
-    console.log(`Paying salaries for ${usersWithJobs.length} users.`);
-    for (const { user, job } of usersWithJobs) {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const usersToPay = await db.select({
+      user: users,
+      job: jobs,
+    })
+    .from(users)
+    .innerJoin(jobs, eq(users.jobId, jobs.id))
+    .where(or(
+      isNull(users.lastPaidAt),
+      lt(users.lastPaidAt, startOfToday)
+    ));
+
+    if (usersToPay.length === 0) {
+      console.log("No salaries to pay today.");
+      return;
+    }
+
+    console.log(`Paying salaries for ${usersToPay.length} users.`);
+    for (const { user, job } of usersToPay) {
       await db.transaction(async (tx) => {
         const salary = job.grossSalary - job.fees + user.bonus;
         await tx.update(users)
           .set({
             balance: user.balance + salary,
             bonus: 0,
-            lastPaidAt: new Date(),
+            lastPaidAt: now,
           })
           .where(eq(users.id, user.id));
       });
@@ -549,6 +582,107 @@ export class DatabaseStorage implements IStorage {
   async createCandidate(candidate: InsertCandidate): Promise<Candidate> {
     const [newCandidate] = await db.insert(candidates).values(candidate).returning();
     return newCandidate;
+  }
+
+  async checkAndAdvanceElections(): Promise<void> {
+    const now = new Date();
+    let currentElection = await this.getCurrentElection();
+
+    // If no election exists, create one for the 1st of next month
+    if (!currentElection) {
+      const startDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      console.log(`No election found, creating new one for ${startDate}`);
+      currentElection = await this.createElection({
+        id: randomUUID(),
+        startDate,
+        status: "candidacy",
+      });
+    }
+
+    const startDate = currentElection.startDate;
+    const candidacyStart = new Date(startDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const campaignStart = new Date(startDate.getTime() - 1 * 24 * 60 * 60 * 1000);
+    const votingEnd = new Date(startDate.getTime() + 1 * 24 * 60 * 60 * 1000);
+
+    let nextStatus = currentElection.status;
+
+    if (now >= votingEnd) {
+      nextStatus = "closed";
+    } else if (now >= startDate) {
+      nextStatus = "voting";
+    } else if (now >= campaignStart) {
+      nextStatus = "campaign";
+    } else if (now >= candidacyStart) {
+      nextStatus = "candidacy";
+    }
+
+    if (nextStatus !== currentElection.status) {
+      console.log(`Advancing election ${currentElection.id} status from ${currentElection.status} to ${nextStatus}`);
+      
+      if (nextStatus === "closed" && currentElection.status !== "closed") {
+        // Calculate winner
+        const votes = await db.select().from(electionVotes).where(eq(electionVotes.electionId, currentElection.id));
+        const candidateCounts: Record<string, number> = {};
+        
+        votes.forEach(v => {
+          if (v.candidateId) {
+            candidateCounts[v.candidateId] = (candidateCounts[v.candidateId] || 0) + 1;
+          }
+        });
+
+        let winnerCandidateId: string | null = null;
+        let maxVotes = -1;
+
+        for (const [cid, count] of Object.entries(candidateCounts)) {
+          if (count > maxVotes) {
+            maxVotes = count;
+            winnerCandidateId = cid;
+          }
+        }
+
+        let winnerUserId: string | null = null;
+        if (winnerCandidateId) {
+          const [candidate] = await db.select().from(candidates).where(eq(candidates.id, winnerCandidateId));
+          if (candidate) {
+            winnerUserId = candidate.userId;
+          }
+        }
+
+        const mandateEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+        await db.update(elections)
+          .set({ 
+            status: "closed", 
+            winnerId: winnerUserId,
+            mandateEndDate: mandateEndDate
+          })
+          .where(eq(elections.id, currentElection.id));
+          
+        // Schedule next election immediately
+        const nextStartDate = new Date(mandateEndDate.getFullYear(), mandateEndDate.getMonth() + 1, 1);
+        await this.createElection({
+          id: randomUUID(),
+          startDate: nextStartDate,
+          status: "candidacy",
+        });
+        console.log(`Scheduled next election for ${nextStartDate}`);
+      } else {
+        await db.update(elections)
+          .set({ status: nextStatus })
+          .where(eq(elections.id, currentElection.id));
+      }
+    } else if (currentElection.status === "closed") {
+       // If current election is closed but no next one is scheduled, schedule it
+       const nextStartDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+       if (nextStartDate > currentElection.startDate) {
+          await this.createElection({
+            id: randomUUID(),
+            startDate: nextStartDate,
+            status: "candidacy",
+          });
+          console.log(`Scheduled missing next election for ${nextStartDate}`);
+       }
+    }
   }
 
   // Admin

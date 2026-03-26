@@ -59,10 +59,83 @@ function ensureAdmin(req: Request, res: Response, next: NextFunction) {
   res.status(401).json({ error: "Unauthorized" });
 }
 
+function ensureBot(req: Request, res: Response, next: NextFunction) {
+  const botToken = req.headers["x-bot-token"];
+  const expectedToken = process.env.BOT_API_KEY || "dev-bot-token";
+  
+  if (botToken === expectedToken) {
+    return next();
+  }
+  res.status(401).json({ error: "Unauthorized Bot Access" });
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Bot API Endpoints
+  app.get("/api/bot/user/:discordId", ensureBot, async (req: Request, res: Response) => {
+    try {
+      const { discordId } = req.params;
+      const user = await storage.getUserByDiscordId(discordId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé sur le site" });
+      }
+      
+      const house = await storage.getHouse(user.id);
+      
+      res.json({
+        id: user.id,
+        username: user.username,
+        discordId: user.discordId,
+        balance: user.balance,
+        bonus: user.bonus,
+        hasHouse: !!house,
+      });
+    } catch (error) {
+      console.error("Bot API Error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/bot/user/:discordId/transaction", ensureBot, async (req: Request, res: Response) => {
+    try {
+      const { discordId } = req.params;
+      const { amount, reason } = req.body;
+      
+      if (typeof amount !== "number" || amount === 0) {
+        return res.status(400).json({ error: "Montant invalide" });
+      }
+
+      const user = await storage.getUserByDiscordId(discordId);
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé sur le site" });
+      }
+
+      if (user.balance + amount < 0) {
+        return res.status(400).json({ error: "Solde insuffisant" });
+      }
+
+      // Update balance directly in DB
+      const [updatedUser] = await db.update(users)
+        .set({ balance: user.balance + amount })
+        .where(eq(users.id, user.id))
+        .returning();
+
+      console.log(`Bot Transaction: ${amount} CapyCoins for ${user.username} (${reason || 'no reason'})`);
+      
+      res.json({
+        username: updatedUser.username,
+        newBalance: updatedUser.balance,
+        amount: amount,
+      });
+    } catch (error) {
+      console.error("Bot Transaction Error:", error);
+      res.status(500).json({ error: "Erreur lors de la transaction" });
+    }
+  });
+
   // Admin login
   app.post("/api/admin/login", (req: Request, res: Response) => {
     const { username, password } = req.body;
@@ -254,8 +327,18 @@ export async function registerRoutes(
           ...(h.expansion || []).map(e => `${e.x},${e.y}`)
       ]));
 
+      // Also add current user's main house cell to blocked cells
+      existingCells.add(`${userHouse.x},${userHouse.y}`);
+
+      const inputCells = new Set<string>();
       for (const cell of cells) {
-        if (existingCells.has(`${cell.x},${cell.y}`)) {
+        const key = `${cell.x},${cell.y}`;
+        if (inputCells.has(key)) {
+          return res.status(400).json({ error: "Cellules d'expansion en double" });
+        }
+        inputCells.add(key);
+
+        if (existingCells.has(key)) {
           return res.status(400).json({ error: `La cellule (${cell.x}, ${cell.y}) est déjà occupée` });
         }
       }
